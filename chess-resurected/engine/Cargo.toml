@@ -1,0 +1,10 @@
+[package]
+name = "chess_resurected_engine"
+version = "0.1.0"
+edition = "2021"
+description = "Rust chess engine core for the Chess Ancient resurrection"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "chess_resurected_engine"
+path = "src/lib.rs"

@@ -1,0 +1,18 @@
+# Rust
+/engine/target/
+
+# Python
+/python/.pytest_cache/
+/python/.venv/
+/python/__pycache__/
+/python/**/__pycache__/
+*.py[cod]
+
+# Local artifacts
+*.db
+*.sqlite
+*.parquet
+*.jsonl
+*.onnx
+*.pt
+*.pth

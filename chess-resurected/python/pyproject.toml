@@ -1,0 +1,15 @@
+[project]
+name = "chess-resurected"
+version = "0.1.0"
+description = "Python data and ML tooling for the Chess Ancient resurrection"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+pgn = ["python-chess>=1.999"]
+ml = ["numpy>=1.26", "torch>=2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
