@@ -36,3 +36,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+# Large local data files
+Chessbase.pgn
+best_param.csv
+validation_data.csv
+training_data.csv
+*.pgn
+*.csv
