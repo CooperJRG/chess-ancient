@@ -8,3 +8,7 @@ license = "MIT OR Apache-2.0"
 [lib]
 name = "chess_resurected_engine"
 path = "src/lib.rs"
+
+[[bin]]
+name = "chess-resurected"
+path = "src/main.rs"
