@@ -1,0 +1,28 @@
+{
+  "records": 800,
+  "settings": {
+    "amp": true,
+    "batch_size": 128,
+    "channels": 32,
+    "device": "cuda",
+    "dropout_p": 0.1,
+    "engine_path": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\engine\\target\\release\\chess-resurected.exe",
+    "fm_target": 2300,
+    "games": 20,
+    "ladder_games": 2,
+    "ladder_movetime_ms": 100,
+    "learning_rate": 0.001,
+    "max_ply": 40,
+    "num_blocks": 2,
+    "opponent_elo": 2300,
+    "preset": "smoke",
+    "run_ladder": false,
+    "run_name": "ui-smoke",
+    "seed": 1,
+    "selfplay_mode": "random",
+    "selfplay_movetime_ms": 30,
+    "stockfish_path": "",
+    "train_epochs": 1,
+    "weight_decay": 0.0001
+  }
+}

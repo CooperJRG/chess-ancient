@@ -1,0 +1,21 @@
+{
+  "checkpoint": "..\\models\\baseline.pt",
+  "dataset": "..\\models\\selfplay_filtered.jsonl",
+  "device": "cuda",
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "illegal_argmax": 0,
+  "latency_ms_per_position": 0.31355854072876227,
+  "policy_loss": 2.876018560784276,
+  "policy_top1": 0.23027265777626774,
+  "policy_top5": 0.5304510320224242,
+  "positions_per_second": 3189.197135807028,
+  "records": 11773,
+  "split": "all",
+  "tactical_smoke_fens": [
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+    "4k3/P7/8/8/8/8/8/4K3 w - - 0 1",
+    "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 2"
+  ],
+  "value_mse": 0.007733798450955283
+}

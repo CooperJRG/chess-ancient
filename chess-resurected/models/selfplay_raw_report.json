@@ -1,0 +1,25 @@
+{
+  "avg_ply": 59.175672258282056,
+  "dedup_removed": 90,
+  "games": 100,
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "illegal_rate": 0.0,
+  "illegal_records": 0,
+  "input_records": 11863,
+  "max_ply": 120,
+  "mode": "random",
+  "output_path": "..\\models\\selfplay_raw.jsonl",
+  "output_records": 11863,
+  "removed_records": 0,
+  "result_counts": {
+    "-1.0": 171,
+    "0.0": 11520,
+    "1.0": 172
+  },
+  "seed": 1,
+  "split_counts": {
+    "test": 760,
+    "train": 9543,
+    "validation": 1560
+  }
+}

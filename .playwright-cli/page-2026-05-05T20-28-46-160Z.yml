@@ -1,0 +1,173 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: R
+      - generic [ref=e6]:
+        - heading "Chess Resurected Control Room" [level=1] [ref=e7]
+        - generic [ref=e8]: Self-play data, CUDA training, evaluation, and ladder checks in one run.
+    - generic [ref=e9]:
+      - generic [ref=e10]: CUDA cuda
+      - generic [ref=e11]: idle
+      - generic [ref=e12]: Stockfish linked
+  - generic [ref=e13]:
+    - complementary [ref=e14]:
+      - generic [ref=e15]:
+        - heading "Pipeline Defaults" [level=2] [ref=e16]
+        - button "Refresh" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: Preset
+          - combobox "Preset" [ref=e21]:
+            - option "Smoke"
+            - option "Balanced" [selected]
+            - option "Serious"
+        - generic [ref=e22]:
+          - generic [ref=e23]: Run name
+          - textbox "Run name" [ref=e24]: cuda-mainline
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: Device
+            - combobox "Device" [ref=e28]:
+              - option "CUDA" [selected]
+              - option "CPU"
+          - generic [ref=e29]:
+            - generic [ref=e30]: Mixed precision
+            - combobox "Mixed precision" [ref=e31]:
+              - option "On" [selected]
+              - option "Off"
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]: Games
+            - spinbutton "Games" [ref=e35]: "1000"
+          - generic [ref=e36]:
+            - generic [ref=e37]: Max ply
+            - spinbutton "Max ply" [ref=e38]: "140"
+          - generic [ref=e39]:
+            - generic [ref=e40]: Seed
+            - spinbutton "Seed" [ref=e41]: "1"
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]: Epochs
+            - spinbutton "Epochs" [ref=e45]: "10"
+          - generic [ref=e46]:
+            - generic [ref=e47]: Batch
+            - spinbutton "Batch" [ref=e48]: "512"
+          - generic [ref=e49]:
+            - generic [ref=e50]: LR
+            - spinbutton "LR" [ref=e51]: "0.001"
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - generic [ref=e54]: Blocks
+            - spinbutton "Blocks" [ref=e55]: "6"
+          - generic [ref=e56]:
+            - generic [ref=e57]: Channels
+            - spinbutton "Channels" [ref=e58]: "128"
+          - generic [ref=e59]:
+            - generic [ref=e60]: Dropout
+            - spinbutton "Dropout" [ref=e61]: "0.1"
+        - generic [ref=e62]:
+          - generic [ref=e63]: Rust engine path
+          - textbox "Rust engine path" [ref=e64]: C:\Users\coope\Test Code\chess-ancient\chess-resurected\engine\target\release\chess-resurected.exe
+        - generic [ref=e65]:
+          - generic [ref=e66]: Stockfish path
+          - textbox "Stockfish path" [ref=e67]:
+            - /placeholder: Optional, or set STOCKFISH_PATH
+            - text: C:\Users\coope\AppData\Local\Microsoft\WinGet\Packages\Stockfish.Stockfish_Microsoft.Winget.Source_8wekyb3d8bbwe\stockfish\stockfish.EXE
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]: Ladder
+            - combobox "Ladder" [ref=e71]:
+              - option "Run" [selected]
+              - option "Skip"
+          - generic [ref=e72]:
+            - generic [ref=e73]: Games
+            - spinbutton "Games" [ref=e74]: "20"
+          - generic [ref=e75]:
+            - generic [ref=e76]: Move ms
+            - spinbutton "Move ms" [ref=e77]: "100"
+        - button "Save Defaults" [ref=e78] [cursor=pointer]
+        - generic [ref=e79]:
+          - button "Run Full Pipeline" [ref=e80] [cursor=pointer]
+          - button "Stop" [disabled] [ref=e81]
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - heading "Training Run" [level=2] [ref=e85]
+          - generic [ref=e86]: 00:00
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: Raw records
+              - strong [ref=e91]: "0"
+            - generic [ref=e92]:
+              - generic [ref=e93]: Filtered records
+              - strong [ref=e94]: "0"
+            - generic [ref=e95]:
+              - generic [ref=e96]: Train loss
+              - strong [ref=e97]: "-"
+            - generic [ref=e98]:
+              - generic [ref=e99]: Ladder Elo
+              - strong [ref=e100]: "-"
+            - generic [ref=e101]:
+              - generic [ref=e102]: Policy top-1
+              - strong [ref=e103]: "-"
+            - generic [ref=e104]:
+              - generic [ref=e105]: Policy top-5
+              - strong [ref=e106]: "-"
+            - generic [ref=e107]:
+              - generic [ref=e108]: Value MSE
+              - strong [ref=e109]: "-"
+            - generic [ref=e110]:
+              - generic [ref=e111]: Latency
+              - strong [ref=e112]: "-"
+          - generic [ref=e114]:
+            - generic [ref=e115]: Generate
+            - generic [ref=e116]: Filter
+            - generic [ref=e117]: Train
+            - generic [ref=e118]: Evaluate
+            - generic [ref=e119]: Ladder
+          - generic [ref=e120]: Ready
+          - img [ref=e121]:
+            - generic [ref=e122]: Run milestones will appear here
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - heading "Artifacts" [level=2] [ref=e126]
+          - generic [ref=e129]: Artifacts appear after a run starts.
+        - generic [ref=e130]:
+          - heading "Play Test" [level=2] [ref=e132]
+          - generic [ref=e133]:
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: Opponent model
+                - combobox "Opponent model" [ref=e137]:
+                  - option "Basic Rust minimax" [selected]
+                  - option "Stockfish level 1"
+                  - option "Stockfish level 5"
+                  - option "Stockfish level 10"
+                  - option "Stockfish level 20"
+                  - option "Trained custom model"
+              - generic [ref=e138]: Playing against Basic Rust minimax
+            - generic [ref=e142]:
+              - generic [ref=e145]: "8"
+              - generic [ref=e155]: "7"
+              - generic [ref=e165]: "6"
+              - generic [ref=e175]: "5"
+              - generic [ref=e185]: "4"
+              - generic [ref=e195]: "3"
+              - generic [ref=e205]: "2"
+              - generic [ref=e213]:
+                - generic [ref=e214]:
+                  - generic [ref=e215]: a
+                  - generic [ref=e216]: "1"
+                - generic [ref=e218]: b
+                - generic [ref=e220]: c
+                - generic [ref=e222]: d
+                - generic [ref=e224]: e
+                - generic [ref=e226]: f
+                - generic [ref=e228]: g
+                - generic [ref=e230]: h
+            - generic [ref=e231]: You play White.
+            - generic [ref=e232]:
+              - button "New Game" [ref=e233] [cursor=pointer]
+              - button "Flip" [ref=e234] [cursor=pointer]
+            - generic [ref=e235]: "-"

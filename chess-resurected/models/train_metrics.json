@@ -1,0 +1,55 @@
+{
+  "checkpoint": "..\\models\\baseline.pt",
+  "dataset": "..\\models\\selfplay_filtered.jsonl",
+  "device": "cuda",
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "history": [
+    {
+      "epoch": 1,
+      "policy_loss": 3.347689212979497,
+      "total_loss": 3.3790900095089063,
+      "val_policy_loss": 3.3062812365018406,
+      "val_total_loss": 3.309379907754751,
+      "val_value_loss": 0.0030986394446629742,
+      "value_loss": 0.03140079087146709
+    },
+    {
+      "epoch": 2,
+      "policy_loss": 3.30295729637146,
+      "total_loss": 3.3264829564738916,
+      "val_policy_loss": 3.3193256304814267,
+      "val_total_loss": 3.325782133982732,
+      "val_value_loss": 0.006456496328330384,
+      "value_loss": 0.023525654615179914
+    },
+    {
+      "epoch": 3,
+      "policy_loss": 3.263932569606884,
+      "total_loss": 3.2790228547276676,
+      "val_policy_loss": 3.3659519048837514,
+      "val_total_loss": 3.3686659519488993,
+      "val_value_loss": 0.0027140432010548045,
+      "value_loss": 0.0150902873515529
+    },
+    {
+      "epoch": 4,
+      "policy_loss": 3.1883661457010217,
+      "total_loss": 3.197574837787731,
+      "val_policy_loss": 3.396690698770376,
+      "val_total_loss": 3.3991256126990685,
+      "val_value_loss": 0.0024349178286054386,
+      "value_loss": 0.009208683171498313
+    },
+    {
+      "epoch": 5,
+      "policy_loss": 2.9800499548783175,
+      "total_loss": 2.986040369884388,
+      "val_policy_loss": 3.603247880935669,
+      "val_total_loss": 3.6068224540123572,
+      "val_value_loss": 0.0035745980388198336,
+      "value_loss": 0.005990415137431056
+    }
+  ],
+  "train_records": 9468,
+  "validation_records": 1551
+}

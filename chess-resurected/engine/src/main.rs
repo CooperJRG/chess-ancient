@@ -1,7 +1,18 @@
 use chess_resurected_engine::{Board, ChessMove, Color, Piece};
+use std::env;
 use std::io::{self, BufRead, Write};
+use std::process;
 
 fn main() {
+    let args: Vec<String> = env::args().skip(1).collect();
+    if !args.is_empty() {
+        if let Err(err) = run_cli(&args) {
+            eprintln!("{err}");
+            process::exit(2);
+        }
+        return;
+    }
+
     let stdin = io::stdin();
     let stdout = io::stdout();
     let mut board = Board::startpos();
@@ -52,6 +63,54 @@ fn main() {
     }
 }
 
+fn run_cli(args: &[String]) -> Result<(), String> {
+    match args.first().map(String::as_str) {
+        Some("legal-moves") => {
+            let fen = option_value(args, "--fen")?;
+            let mut board = Board::from_fen(fen).map_err(|e| format!("invalid --fen: {e}"))?;
+            let mut moves: Vec<String> =
+                board.legal_moves().iter().map(ChessMove::to_uci).collect();
+            moves.sort();
+            println!("{}", moves.join(" "));
+            Ok(())
+        }
+        Some("perft") => {
+            let fen = option_value(args, "--fen")?;
+            let depth: u32 = option_value(args, "--depth")?
+                .parse()
+                .map_err(|_| "--depth must be a non-negative integer".to_owned())?;
+            let mut board = Board::from_fen(fen).map_err(|e| format!("invalid --fen: {e}"))?;
+            println!("{}", board.perft(depth));
+            Ok(())
+        }
+        Some("help") | Some("--help") | Some("-h") => {
+            print_help();
+            Ok(())
+        }
+        Some(cmd) => Err(format!("unknown command '{cmd}'\n\n{}", help_text())),
+        None => Ok(()),
+    }
+}
+
+fn option_value<'a>(args: &'a [String], name: &str) -> Result<&'a str, String> {
+    args.windows(2)
+        .find(|pair| pair[0] == name)
+        .map(|pair| pair[1].as_str())
+        .ok_or_else(|| format!("missing required option {name}\n\n{}", help_text()))
+}
+
+fn print_help() {
+    println!("{}", help_text());
+}
+
+fn help_text() -> &'static str {
+    "Usage:
+  chess-resurected legal-moves --fen <FEN>
+  chess-resurected perft --fen <FEN> --depth <N>
+
+With no arguments, starts the UCI-compatible stdin loop."
+}
+
 fn parse_position(rest: &str) -> Board {
     // Split on " moves " first so FEN parsing is unambiguous
     let (pos_part, moves_part) = match rest.find(" moves ") {
@@ -92,17 +151,22 @@ fn find_uci_move(board: &mut Board, uci: &str) -> Option<ChessMove> {
         _ => None,
     });
 
-    board.legal_moves().into_iter().find(|m| {
-        m.from == from && m.to == to && m.promotion == promo
-    })
+    board
+        .legal_moves()
+        .into_iter()
+        .find(|m| m.from == from && m.to == to && m.promotion == promo)
 }
 
 fn parse_sq(s: &str) -> Option<u8> {
     let b = s.as_bytes();
-    if b.len() < 2 { return None; }
+    if b.len() < 2 {
+        return None;
+    }
     let file = b[0].checked_sub(b'a')?;
     let rank = b[1].checked_sub(b'1')?;
-    if file > 7 || rank > 7 { return None; }
+    if file > 7 || rank > 7 {
+        return None;
+    }
     Some(rank * 8 + file)
 }
 
@@ -136,7 +200,13 @@ fn search(board: &mut Board) -> Option<ChessMove> {
     Some(best_move)
 }
 
-fn alpha_beta(board: &mut Board, depth: u32, mut alpha: i32, mut beta: i32, maximizing: bool) -> i32 {
+fn alpha_beta(
+    board: &mut Board,
+    depth: u32,
+    mut alpha: i32,
+    mut beta: i32,
+    maximizing: bool,
+) -> i32 {
     if depth == 0 {
         return evaluate(board);
     }
@@ -145,7 +215,11 @@ fn alpha_beta(board: &mut Board, depth: u32, mut alpha: i32, mut beta: i32, maxi
     if moves.is_empty() {
         let color = board.side_to_move();
         return if board.is_in_check(color) {
-            if maximizing { -MATE_SCORE } else { MATE_SCORE }
+            if maximizing {
+                -MATE_SCORE
+            } else {
+                MATE_SCORE
+            }
         } else {
             0 // stalemate
         };
@@ -158,7 +232,9 @@ fn alpha_beta(board: &mut Board, depth: u32, mut alpha: i32, mut beta: i32, maxi
             value = value.max(alpha_beta(board, depth - 1, alpha, beta, false));
             board.unmake_move(state);
             alpha = alpha.max(value);
-            if value >= beta { break; }
+            if value >= beta {
+                break;
+            }
         }
         value
     } else {
@@ -168,7 +244,9 @@ fn alpha_beta(board: &mut Board, depth: u32, mut alpha: i32, mut beta: i32, maxi
             value = value.min(alpha_beta(board, depth - 1, alpha, beta, true));
             board.unmake_move(state);
             beta = beta.min(value);
-            if value <= alpha { break; }
+            if value <= alpha {
+                break;
+            }
         }
         value
     }

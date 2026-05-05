@@ -1,0 +1,17 @@
+{
+  "checkpoint": "..\\models\\baseline.pt",
+  "device": "cuda",
+  "draws": 1,
+  "elo_ci95_high": 1905.2232881534655,
+  "elo_ci95_low": -99.99982628212047,
+  "elo_estimate": 1663.5741571894005,
+  "fm_target": 2300.0,
+  "games": 20,
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "losses": 19,
+  "opponent_elo": 2300.0,
+  "opponent_engine": "C:\\Users\\coope\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Stockfish.Stockfish_Microsoft.Winget.Source_8wekyb3d8bbwe\\stockfish\\stockfish.exe",
+  "score": 0.025,
+  "status": "not_yet_fm_level",
+  "wins": 0
+}

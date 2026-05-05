@@ -3,12 +3,19 @@ name = "chess-resurected"
 version = "0.1.0"
 description = "Python data and ML tooling for the Chess Ancient resurrection"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["python-chess>=1.999"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 pgn = ["python-chess>=1.999"]
 ml = ["numpy>=1.26", "torch>=2"]
+
+[project.scripts]
+chess-resurected-generate-selfplay = "chess_resurected.generate_selfplay:main"
+chess-resurected-filter-dataset = "chess_resurected.filter_dataset:main"
+chess-resurected-train-baseline = "chess_resurected.train_baseline:main"
+chess-resurected-eval-baseline = "chess_resurected.eval_baseline:main"
+chess-resurected-play-ladder = "chess_resurected.play_ladder:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

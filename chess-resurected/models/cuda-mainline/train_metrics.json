@@ -1,0 +1,100 @@
+{
+  "checkpoint": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\cuda-mainline\\baseline.pt",
+  "dataset": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\cuda-mainline\\selfplay_filtered.jsonl",
+  "device": "cuda",
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "history": [
+    {
+      "epoch": 1,
+      "policy_loss": 3.3028414282687875,
+      "total_loss": 3.355014282049135,
+      "val_policy_loss": 3.2954213972444886,
+      "val_total_loss": 3.343121820025974,
+      "val_value_loss": 0.047700433560681564,
+      "value_loss": 0.052172857367022096
+    },
+    {
+      "epoch": 2,
+      "policy_loss": 3.296020778389864,
+      "total_loss": 3.346217566867207,
+      "val_policy_loss": 3.296780065253929,
+      "val_total_loss": 3.344692654079861,
+      "val_value_loss": 0.04791256920348301,
+      "value_loss": 0.050196783426542615
+    },
+    {
+      "epoch": 3,
+      "policy_loss": 3.2929316243460014,
+      "total_loss": 3.3372548380563427,
+      "val_policy_loss": 3.2962600036903664,
+      "val_total_loss": 3.347030348247952,
+      "val_value_loss": 0.05077034861918677,
+      "value_loss": 0.04432320336616317
+    },
+    {
+      "epoch": 4,
+      "policy_loss": 3.2836840130562006,
+      "total_loss": 3.3136649153953375,
+      "val_policy_loss": 3.3046796410172075,
+      "val_total_loss": 3.356073909335666,
+      "val_value_loss": 0.05139422271383443,
+      "value_loss": 0.02998089256241571
+    },
+    {
+      "epoch": 5,
+      "policy_loss": 3.2421309016471684,
+      "total_loss": 3.2643529115721237,
+      "val_policy_loss": 3.341384110627351,
+      "val_total_loss": 3.3946727028599493,
+      "val_value_loss": 0.05328858910663122,
+      "value_loss": 0.022222014230697654
+    },
+    {
+      "epoch": 6,
+      "policy_loss": 3.137253274474033,
+      "total_loss": 3.155623675501624,
+      "val_policy_loss": 3.4123515994460494,
+      "val_total_loss": 3.463733673095703,
+      "val_value_loss": 0.05138204992895394,
+      "value_loss": 0.01837039967609006
+    },
+    {
+      "epoch": 7,
+      "policy_loss": 3.002846535970998,
+      "total_loss": 3.0190178682637767,
+      "val_policy_loss": 3.5301762686835394,
+      "val_total_loss": 3.5828123534167253,
+      "val_value_loss": 0.052636064888685254,
+      "value_loss": 0.016171330462621394
+    },
+    {
+      "epoch": 8,
+      "policy_loss": 2.8891201440678085,
+      "total_loss": 2.9038736365562263,
+      "val_policy_loss": 3.618831669842755,
+      "val_total_loss": 3.6732409088699907,
+      "val_value_loss": 0.054409225626538195,
+      "value_loss": 0.014753487580834865
+    },
+    {
+      "epoch": 9,
+      "policy_loss": 2.7973335099774737,
+      "total_loss": 2.811136944349422,
+      "val_policy_loss": 3.7238771738829435,
+      "val_total_loss": 3.7783829459437617,
+      "val_value_loss": 0.054505787949353735,
+      "value_loss": 0.013803433858637892
+    },
+    {
+      "epoch": 10,
+      "policy_loss": 2.715658115786175,
+      "total_loss": 2.7291048504585445,
+      "val_policy_loss": 3.807859085224293,
+      "val_total_loss": 3.862055857976278,
+      "val_value_loss": 0.054196821999977586,
+      "value_loss": 0.013446740542949979
+    }
+  ],
+  "train_records": 109657,
+  "validation_records": 13796
+}

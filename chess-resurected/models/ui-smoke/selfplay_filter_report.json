@@ -1,0 +1,19 @@
+{
+  "avg_ply": 19.694444444444443,
+  "dedup_removed": 8,
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "illegal_rate": 0.0,
+  "illegal_records": 0,
+  "illegal_removed": 0,
+  "input_records": 800,
+  "output_records": 792,
+  "removed_records": 8,
+  "result_counts": {
+    "0.0": 792
+  },
+  "split_counts": {
+    "test": 79,
+    "train": 554,
+    "validation": 159
+  }
+}

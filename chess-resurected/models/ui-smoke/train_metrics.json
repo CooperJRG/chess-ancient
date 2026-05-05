@@ -1,0 +1,19 @@
+{
+  "checkpoint": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\ui-smoke\\baseline.pt",
+  "dataset": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\ui-smoke\\selfplay_filtered.jsonl",
+  "device": "cuda",
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "history": [
+    {
+      "epoch": 1,
+      "policy_loss": 3.456679630279541,
+      "total_loss": 3.463123083114624,
+      "val_policy_loss": 3.31958544254303,
+      "val_total_loss": 3.320688009262085,
+      "val_value_loss": 0.001102559210266918,
+      "value_loss": 0.006443433277308941
+    }
+  ],
+  "train_records": 554,
+  "validation_records": 159
+}

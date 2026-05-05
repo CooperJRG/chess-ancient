@@ -1,0 +1,53 @@
+{
+  "checkpoint": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\cuda-mainline\\cycles\\00001\\checkpoint.pt",
+  "decisive_samples": 5698,
+  "device": "cuda",
+  "draw_samples": 8370,
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "history": [
+    {
+      "epoch": 1,
+      "policy_loss": NaN,
+      "replay_samples": 14068,
+      "total_loss": NaN,
+      "value_loss": 0.3847458559487547
+    },
+    {
+      "epoch": 2,
+      "policy_loss": NaN,
+      "replay_samples": 14068,
+      "total_loss": NaN,
+      "value_loss": 0.11472295384321894
+    }
+  ],
+  "replay": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\cuda-mainline\\latest_replay.pt",
+  "replay_metadata": {
+    "last_cycle_report": {
+      "adjudicated_games": 0,
+      "average_ply": 70.34,
+      "black_wins": 18,
+      "checkmates": 0,
+      "cycle": 1,
+      "decisive_games": 32,
+      "draw_rate": 0.68,
+      "draws": 68,
+      "games": 100,
+      "samples": 7034,
+      "settings": {
+        "cycle_games": 100,
+        "max_ply": 140,
+        "mcts_simulations": 64,
+        "warmup_cycles": 1
+      },
+      "sources": {
+        "engine-warmup": 100
+      },
+      "stopped": false,
+      "white_wins": 14
+    },
+    "latest_cycle": 1,
+    "samples": 14068,
+    "updated_at": 1778017937.3271136
+  },
+  "train_records": 14068
+}

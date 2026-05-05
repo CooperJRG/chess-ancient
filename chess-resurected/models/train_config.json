@@ -1,0 +1,20 @@
+{
+  "config": {
+    "amp": true,
+    "batch_size": 128,
+    "channels": 64,
+    "checkpoint": "..\\models\\baseline.pt",
+    "config_out": "..\\models\\train_config.json",
+    "dataset": "..\\models\\selfplay_filtered.jsonl",
+    "device": null,
+    "dropout_p": 0.1,
+    "epochs": 5,
+    "lr": 0.001,
+    "metrics": "..\\models\\train_metrics.json",
+    "num_blocks": 4,
+    "resume": false,
+    "seed": 1,
+    "weight_decay": 0.0001
+  },
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad"
+}

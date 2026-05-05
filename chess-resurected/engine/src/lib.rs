@@ -8,8 +8,14 @@ pub const STARTPOS_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ
 const BISHOP_DIRS: [(i8, i8); 4] = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
 const ROOK_DIRS: [(i8, i8); 4] = [(1, 0), (-1, 0), (0, 1), (0, -1)];
 const QUEEN_DIRS: [(i8, i8); 8] = [
-    (1, 1), (1, -1), (-1, 1), (-1, -1),
-    (1, 0), (-1, 0), (0, 1), (0, -1),
+    (1, 1),
+    (1, -1),
+    (-1, 1),
+    (-1, -1),
+    (1, 0),
+    (-1, 0),
+    (0, 1),
+    (0, -1),
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -72,11 +78,21 @@ impl CastlingRights {
 
     fn to_fen(self) -> String {
         let mut value = String::new();
-        if self.white_king_side { value.push('K'); }
-        if self.white_queen_side { value.push('Q'); }
-        if self.black_king_side { value.push('k'); }
-        if self.black_queen_side { value.push('q'); }
-        if value.is_empty() { value.push('-'); }
+        if self.white_king_side {
+            value.push('K');
+        }
+        if self.white_queen_side {
+            value.push('Q');
+        }
+        if self.black_king_side {
+            value.push('k');
+        }
+        if self.black_queen_side {
+            value.push('q');
+        }
+        if value.is_empty() {
+            value.push('-');
+        }
         value
     }
 }
@@ -143,12 +159,22 @@ impl Board {
 
     pub fn from_fen(fen: &str) -> Result<Self, FenError> {
         let mut parts = fen.split_whitespace();
-        let placement = parts.next().ok_or(FenError::MissingField("piece placement"))?;
+        let placement = parts
+            .next()
+            .ok_or(FenError::MissingField("piece placement"))?;
         let side = parts.next().ok_or(FenError::MissingField("side to move"))?;
-        let castling = parts.next().ok_or(FenError::MissingField("castling rights"))?;
-        let en_passant = parts.next().ok_or(FenError::MissingField("en-passant square"))?;
-        let halfmove = parts.next().ok_or(FenError::MissingField("halfmove clock"))?;
-        let fullmove = parts.next().ok_or(FenError::MissingField("fullmove number"))?;
+        let castling = parts
+            .next()
+            .ok_or(FenError::MissingField("castling rights"))?;
+        let en_passant = parts
+            .next()
+            .ok_or(FenError::MissingField("en-passant square"))?;
+        let halfmove = parts
+            .next()
+            .ok_or(FenError::MissingField("halfmove clock"))?;
+        let fullmove = parts
+            .next()
+            .ok_or(FenError::MissingField("fullmove number"))?;
         if parts.next().is_some() {
             return Err(FenError::TooManyFields);
         }
@@ -177,19 +203,34 @@ impl Board {
         format!(
             "{} {} {} {} {} {}",
             self.placement_to_fen(),
-            match self.side_to_move { Color::White => "w", Color::Black => "b" },
+            match self.side_to_move {
+                Color::White => "w",
+                Color::Black => "b",
+            },
             self.castling_rights.to_fen(),
-            self.en_passant.map(square_name).unwrap_or_else(|| "-".to_owned()),
+            self.en_passant
+                .map(square_name)
+                .unwrap_or_else(|| "-".to_owned()),
             self.halfmove_clock,
             self.fullmove_number
         )
     }
 
-    pub fn side_to_move(&self) -> Color { self.side_to_move }
-    pub fn castling_rights(&self) -> CastlingRights { self.castling_rights }
-    pub fn en_passant(&self) -> Option<u8> { self.en_passant }
-    pub fn halfmove_clock(&self) -> u32 { self.halfmove_clock }
-    pub fn fullmove_number(&self) -> u32 { self.fullmove_number }
+    pub fn side_to_move(&self) -> Color {
+        self.side_to_move
+    }
+    pub fn castling_rights(&self) -> CastlingRights {
+        self.castling_rights
+    }
+    pub fn en_passant(&self) -> Option<u8> {
+        self.en_passant
+    }
+    pub fn halfmove_clock(&self) -> u32 {
+        self.halfmove_clock
+    }
+    pub fn fullmove_number(&self) -> u32 {
+        self.fullmove_number
+    }
 
     pub fn bitboard(&self, color: Color, piece: Piece) -> u64 {
         self.bitboards[piece_index(color, piece)]
@@ -226,20 +267,28 @@ impl Board {
         match by {
             Color::White => {
                 if sq_r > 0 {
-                    if sq_f < 7 && self.bitboard(Color::White, Piece::Pawn) & (1u64 << (sq - 7)) != 0 {
+                    if sq_f < 7
+                        && self.bitboard(Color::White, Piece::Pawn) & (1u64 << (sq - 7)) != 0
+                    {
                         return true;
                     }
-                    if sq_f > 0 && self.bitboard(Color::White, Piece::Pawn) & (1u64 << (sq - 9)) != 0 {
+                    if sq_f > 0
+                        && self.bitboard(Color::White, Piece::Pawn) & (1u64 << (sq - 9)) != 0
+                    {
                         return true;
                     }
                 }
             }
             Color::Black => {
                 if sq_r < 7 {
-                    if sq_f < 7 && self.bitboard(Color::Black, Piece::Pawn) & (1u64 << (sq + 9)) != 0 {
+                    if sq_f < 7
+                        && self.bitboard(Color::Black, Piece::Pawn) & (1u64 << (sq + 9)) != 0
+                    {
                         return true;
                     }
-                    if sq_f > 0 && self.bitboard(Color::Black, Piece::Pawn) & (1u64 << (sq + 7)) != 0 {
+                    if sq_f > 0
+                        && self.bitboard(Color::Black, Piece::Pawn) & (1u64 << (sq + 7)) != 0
+                    {
                         return true;
                     }
                 }
@@ -253,13 +302,17 @@ impl Board {
 
         // Bishop / Queen diagonals
         let diag = sliding_attacks(sq, occupied, &BISHOP_DIRS);
-        if self.bitboard(by, Piece::Bishop) & diag != 0 || self.bitboard(by, Piece::Queen) & diag != 0 {
+        if self.bitboard(by, Piece::Bishop) & diag != 0
+            || self.bitboard(by, Piece::Queen) & diag != 0
+        {
             return true;
         }
 
         // Rook / Queen straights
         let straight = sliding_attacks(sq, occupied, &ROOK_DIRS);
-        if self.bitboard(by, Piece::Rook) & straight != 0 || self.bitboard(by, Piece::Queen) & straight != 0 {
+        if self.bitboard(by, Piece::Rook) & straight != 0
+            || self.bitboard(by, Piece::Queen) & straight != 0
+        {
             return true;
         }
 
@@ -458,22 +511,41 @@ impl Board {
                         if rank == 1 {
                             let two = from + 16;
                             if two < 64 && occupied & (1u64 << two) == 0 {
-                                moves.push(ChessMove { from, to: two, promotion: None, kind: MoveKind::DoublePawnPush });
+                                moves.push(ChessMove {
+                                    from,
+                                    to: two,
+                                    promotion: None,
+                                    kind: MoveKind::DoublePawnPush,
+                                });
                             }
                         }
                     }
                     if file > 0 {
                         let cap = from + 7;
-                        if enemy & (1u64 << cap) != 0 { push_pawn_move(moves, from, cap, Color::White); }
+                        if enemy & (1u64 << cap) != 0 {
+                            push_pawn_move(moves, from, cap, Color::White);
+                        }
                         if self.en_passant == Some(cap) && rank == 4 {
-                            moves.push(ChessMove { from, to: cap, promotion: None, kind: MoveKind::EnPassant });
+                            moves.push(ChessMove {
+                                from,
+                                to: cap,
+                                promotion: None,
+                                kind: MoveKind::EnPassant,
+                            });
                         }
                     }
                     if file < 7 {
                         let cap = from + 9;
-                        if enemy & (1u64 << cap) != 0 { push_pawn_move(moves, from, cap, Color::White); }
+                        if enemy & (1u64 << cap) != 0 {
+                            push_pawn_move(moves, from, cap, Color::White);
+                        }
                         if self.en_passant == Some(cap) && rank == 4 {
-                            moves.push(ChessMove { from, to: cap, promotion: None, kind: MoveKind::EnPassant });
+                            moves.push(ChessMove {
+                                from,
+                                to: cap,
+                                promotion: None,
+                                kind: MoveKind::EnPassant,
+                            });
                         }
                     }
                 }
@@ -485,23 +557,42 @@ impl Board {
                             if rank == 6 {
                                 let two = from - 16;
                                 if occupied & (1u64 << two) == 0 {
-                                    moves.push(ChessMove { from, to: two, promotion: None, kind: MoveKind::DoublePawnPush });
+                                    moves.push(ChessMove {
+                                        from,
+                                        to: two,
+                                        promotion: None,
+                                        kind: MoveKind::DoublePawnPush,
+                                    });
                                 }
                             }
                         }
                     }
                     if file > 0 && from >= 9 {
                         let cap = from - 9;
-                        if enemy & (1u64 << cap) != 0 { push_pawn_move(moves, from, cap, Color::Black); }
+                        if enemy & (1u64 << cap) != 0 {
+                            push_pawn_move(moves, from, cap, Color::Black);
+                        }
                         if self.en_passant == Some(cap) && rank == 3 {
-                            moves.push(ChessMove { from, to: cap, promotion: None, kind: MoveKind::EnPassant });
+                            moves.push(ChessMove {
+                                from,
+                                to: cap,
+                                promotion: None,
+                                kind: MoveKind::EnPassant,
+                            });
                         }
                     }
                     if file < 7 && from >= 7 {
                         let cap = from - 7;
-                        if enemy & (1u64 << cap) != 0 { push_pawn_move(moves, from, cap, Color::Black); }
+                        if enemy & (1u64 << cap) != 0 {
+                            push_pawn_move(moves, from, cap, Color::Black);
+                        }
                         if self.en_passant == Some(cap) && rank == 3 {
-                            moves.push(ChessMove { from, to: cap, promotion: None, kind: MoveKind::EnPassant });
+                            moves.push(ChessMove {
+                                from,
+                                to: cap,
+                                promotion: None,
+                                kind: MoveKind::EnPassant,
+                            });
                         }
                     }
                 }
@@ -514,7 +605,12 @@ impl Board {
         let own = self.occupancy(color);
         for from in squares(self.bitboard(color, Piece::Knight)) {
             for to in squares(knight_attack_mask(from) & !own) {
-                moves.push(ChessMove { from, to, promotion: None, kind: MoveKind::Normal });
+                moves.push(ChessMove {
+                    from,
+                    to,
+                    promotion: None,
+                    kind: MoveKind::Normal,
+                });
             }
         }
     }
@@ -525,7 +621,12 @@ impl Board {
         let occupied = self.all_occupancy();
         for from in squares(self.bitboard(color, piece)) {
             for to in squares(sliding_attacks(from, occupied, dirs) & !own) {
-                moves.push(ChessMove { from, to, promotion: None, kind: MoveKind::Normal });
+                moves.push(ChessMove {
+                    from,
+                    to,
+                    promotion: None,
+                    kind: MoveKind::Normal,
+                });
             }
         }
     }
@@ -535,7 +636,12 @@ impl Board {
         let own = self.occupancy(color);
         for from in squares(self.bitboard(color, Piece::King)) {
             for to in squares(king_attack_mask(from) & !own) {
-                moves.push(ChessMove { from, to, promotion: None, kind: MoveKind::Normal });
+                moves.push(ChessMove {
+                    from,
+                    to,
+                    promotion: None,
+                    kind: MoveKind::Normal,
+                });
             }
         }
     }
@@ -554,7 +660,12 @@ impl Board {
                     && !self.is_square_attacked(5, opp)
                     && !self.is_square_attacked(6, opp)
                 {
-                    moves.push(ChessMove { from: 4, to: 6, promotion: None, kind: MoveKind::CastleKingSide });
+                    moves.push(ChessMove {
+                        from: 4,
+                        to: 6,
+                        promotion: None,
+                        kind: MoveKind::CastleKingSide,
+                    });
                 }
                 // Queen-side: b1/c1/d1 empty, e1/d1/c1 not attacked
                 if self.castling_rights.white_queen_side
@@ -563,7 +674,12 @@ impl Board {
                     && !self.is_square_attacked(3, opp)
                     && !self.is_square_attacked(2, opp)
                 {
-                    moves.push(ChessMove { from: 4, to: 2, promotion: None, kind: MoveKind::CastleQueenSide });
+                    moves.push(ChessMove {
+                        from: 4,
+                        to: 2,
+                        promotion: None,
+                        kind: MoveKind::CastleQueenSide,
+                    });
                 }
             }
             Color::Black => {
@@ -574,7 +690,12 @@ impl Board {
                     && !self.is_square_attacked(61, opp)
                     && !self.is_square_attacked(62, opp)
                 {
-                    moves.push(ChessMove { from: 60, to: 62, promotion: None, kind: MoveKind::CastleKingSide });
+                    moves.push(ChessMove {
+                        from: 60,
+                        to: 62,
+                        promotion: None,
+                        kind: MoveKind::CastleKingSide,
+                    });
                 }
                 // Queen-side: b8/c8/d8 empty
                 if self.castling_rights.black_queen_side
@@ -583,25 +704,40 @@ impl Board {
                     && !self.is_square_attacked(59, opp)
                     && !self.is_square_attacked(58, opp)
                 {
-                    moves.push(ChessMove { from: 60, to: 58, promotion: None, kind: MoveKind::CastleQueenSide });
+                    moves.push(ChessMove {
+                        from: 60,
+                        to: 58,
+                        promotion: None,
+                        kind: MoveKind::CastleQueenSide,
+                    });
                 }
             }
         }
     }
 
     fn update_castling_rights(&mut self, from: u8, to: u8) {
-        if from == 4 { // white king start
+        if from == 4 {
+            // white king start
             self.castling_rights.white_king_side = false;
             self.castling_rights.white_queen_side = false;
         }
-        if from == 60 { // black king start
+        if from == 60 {
+            // black king start
             self.castling_rights.black_king_side = false;
             self.castling_rights.black_queen_side = false;
         }
-        if from == 7 || to == 7 { self.castling_rights.white_king_side = false; }
-        if from == 0 || to == 0 { self.castling_rights.white_queen_side = false; }
-        if from == 63 || to == 63 { self.castling_rights.black_king_side = false; }
-        if from == 56 || to == 56 { self.castling_rights.black_queen_side = false; }
+        if from == 7 || to == 7 {
+            self.castling_rights.white_king_side = false;
+        }
+        if from == 0 || to == 0 {
+            self.castling_rights.white_queen_side = false;
+        }
+        if from == 63 || to == 63 {
+            self.castling_rights.black_king_side = false;
+        }
+        if from == 56 || to == 56 {
+            self.castling_rights.black_queen_side = false;
+        }
     }
 
     fn parse_placement(&mut self, placement: &str) -> Result<(), FenError> {
@@ -697,26 +833,46 @@ impl Error for FenError {}
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const ALL_PIECES: [Piece; 6] = [
-    Piece::Pawn, Piece::Knight, Piece::Bishop,
-    Piece::Rook, Piece::Queen, Piece::King,
+    Piece::Pawn,
+    Piece::Knight,
+    Piece::Bishop,
+    Piece::Rook,
+    Piece::Queen,
+    Piece::King,
 ];
 
 fn color_offset(color: Color) -> usize {
-    match color { Color::White => 0, Color::Black => 6 }
-}
-
-fn piece_index(color: Color, piece: Piece) -> usize {
-    color_offset(color) + match piece {
-        Piece::Pawn => 0, Piece::Knight => 1, Piece::Bishop => 2,
-        Piece::Rook => 3, Piece::Queen => 4, Piece::King => 5,
+    match color {
+        Color::White => 0,
+        Color::Black => 6,
     }
 }
 
+fn piece_index(color: Color, piece: Piece) -> usize {
+    color_offset(color)
+        + match piece {
+            Piece::Pawn => 0,
+            Piece::Knight => 1,
+            Piece::Bishop => 2,
+            Piece::Rook => 3,
+            Piece::Queen => 4,
+            Piece::King => 5,
+        }
+}
+
 fn piece_from_fen(ch: char) -> Option<(Color, Piece)> {
-    let color = if ch.is_ascii_uppercase() { Color::White } else { Color::Black };
+    let color = if ch.is_ascii_uppercase() {
+        Color::White
+    } else {
+        Color::Black
+    };
     let piece = match ch.to_ascii_lowercase() {
-        'p' => Piece::Pawn, 'n' => Piece::Knight, 'b' => Piece::Bishop,
-        'r' => Piece::Rook, 'q' => Piece::Queen, 'k' => Piece::King,
+        'p' => Piece::Pawn,
+        'n' => Piece::Knight,
+        'b' => Piece::Bishop,
+        'r' => Piece::Rook,
+        'q' => Piece::Queen,
+        'k' => Piece::King,
         _ => return None,
     };
     Some((color, piece))
@@ -724,18 +880,25 @@ fn piece_from_fen(ch: char) -> Option<(Color, Piece)> {
 
 fn piece_to_fen(color: Color, piece: Piece) -> char {
     let ch = match piece {
-        Piece::Pawn => 'p', Piece::Knight => 'n', Piece::Bishop => 'b',
-        Piece::Rook => 'r', Piece::Queen => 'q', Piece::King => 'k',
+        Piece::Pawn => 'p',
+        Piece::Knight => 'n',
+        Piece::Bishop => 'b',
+        Piece::Rook => 'r',
+        Piece::Queen => 'q',
+        Piece::King => 'k',
     };
-    match color { Color::White => ch.to_ascii_uppercase(), Color::Black => ch }
+    match color {
+        Color::White => ch.to_ascii_uppercase(),
+        Color::Black => ch,
+    }
 }
 
 fn parse_square(value: &str) -> Result<Option<u8>, FenError> {
-    if value == "-" { return Ok(None); }
+    if value == "-" {
+        return Ok(None);
+    }
     let bytes = value.as_bytes();
-    if bytes.len() != 2
-        || !(b'a'..=b'h').contains(&bytes[0])
-        || !(b'1'..=b'8').contains(&bytes[1])
+    if bytes.len() != 2 || !(b'a'..=b'h').contains(&bytes[0]) || !(b'1'..=b'8').contains(&bytes[1])
     {
         return Err(FenError::InvalidSquare(value.to_owned()));
     }
@@ -750,7 +913,9 @@ pub fn square_name(square: u8) -> String {
 
 fn squares(mut bb: u64) -> impl Iterator<Item = u8> {
     std::iter::from_fn(move || {
-        if bb == 0 { return None; }
+        if bb == 0 {
+            return None;
+        }
         let sq = bb.trailing_zeros() as u8;
         bb &= bb - 1;
         Some(sq)
@@ -758,13 +923,26 @@ fn squares(mut bb: u64) -> impl Iterator<Item = u8> {
 }
 
 fn push_pawn_move(moves: &mut Vec<ChessMove>, from: u8, to: u8, color: Color) {
-    let promo_rank = match color { Color::White => 7, Color::Black => 0 };
+    let promo_rank = match color {
+        Color::White => 7,
+        Color::Black => 0,
+    };
     if to / 8 == promo_rank {
         for p in [Piece::Queen, Piece::Rook, Piece::Bishop, Piece::Knight] {
-            moves.push(ChessMove { from, to, promotion: Some(p), kind: MoveKind::Normal });
+            moves.push(ChessMove {
+                from,
+                to,
+                promotion: Some(p),
+                kind: MoveKind::Normal,
+            });
         }
     } else {
-        moves.push(ChessMove { from, to, promotion: None, kind: MoveKind::Normal });
+        moves.push(ChessMove {
+            from,
+            to,
+            promotion: None,
+            kind: MoveKind::Normal,
+        });
     }
 }
 
@@ -772,7 +950,16 @@ fn knight_attack_mask(sq: u8) -> u64 {
     let rank = (sq / 8) as i8;
     let file = (sq % 8) as i8;
     let mut mask = 0u64;
-    for (dr, df) in [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)] {
+    for (dr, df) in [
+        (-2, -1),
+        (-2, 1),
+        (-1, -2),
+        (-1, 2),
+        (1, -2),
+        (1, 2),
+        (2, -1),
+        (2, 1),
+    ] {
         let nr = rank + dr;
         let nf = file + df;
         if (0..8).contains(&nr) && (0..8).contains(&nf) {
@@ -788,7 +975,9 @@ fn king_attack_mask(sq: u8) -> u64 {
     let mut mask = 0u64;
     for dr in -1i8..=1 {
         for df in -1i8..=1 {
-            if dr == 0 && df == 0 { continue; }
+            if dr == 0 && df == 0 {
+                continue;
+            }
             let nr = rank + dr;
             let nf = file + df;
             if (0..8).contains(&nr) && (0..8).contains(&nf) {
@@ -809,7 +998,9 @@ fn sliding_attacks(sq: u8, occupied: u64, dirs: &[(i8, i8)]) -> u64 {
         while (0..8).contains(&r) && (0..8).contains(&f) {
             let target = (r * 8 + f) as u8;
             attacks |= 1u64 << target;
-            if occupied & (1u64 << target) != 0 { break; }
+            if occupied & (1u64 << target) != 0 {
+                break;
+            }
             r += dr;
             f += df;
         }

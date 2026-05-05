@@ -1,0 +1,20 @@
+{
+  "config": {
+    "amp": true,
+    "batch_size": 128,
+    "channels": 32,
+    "checkpoint": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\ui-smoke\\baseline.pt",
+    "config_out": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\ui-smoke\\train_config.json",
+    "dataset": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\ui-smoke\\selfplay_filtered.jsonl",
+    "device": "cuda",
+    "dropout_p": 0.1,
+    "epochs": 1,
+    "lr": 0.001,
+    "metrics": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\ui-smoke\\train_metrics.json",
+    "num_blocks": 2,
+    "resume": false,
+    "seed": 1,
+    "weight_decay": 0.0001
+  },
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad"
+}

@@ -1,0 +1,23 @@
+{
+  "adjudicated_games": 0,
+  "average_ply": 70.34,
+  "black_wins": 18,
+  "checkmates": 0,
+  "cycle": 1,
+  "decisive_games": 32,
+  "draw_rate": 0.68,
+  "draws": 68,
+  "games": 100,
+  "samples": 7034,
+  "settings": {
+    "cycle_games": 100,
+    "max_ply": 140,
+    "mcts_simulations": 64,
+    "warmup_cycles": 1
+  },
+  "sources": {
+    "engine-warmup": 100
+  },
+  "stopped": false,
+  "white_wins": 14
+}

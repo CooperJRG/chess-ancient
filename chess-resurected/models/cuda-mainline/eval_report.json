@@ -1,0 +1,8 @@
+{
+  "latency_ms_per_position": 0.04911210884721163,
+  "legal_mask_sane": true,
+  "policy_top1": 0.3227182257605914,
+  "policy_top5": 0.6879442706852431,
+  "records": 14068,
+  "value_mse": 0.09235911346275019
+}

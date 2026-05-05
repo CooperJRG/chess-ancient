@@ -1,0 +1,17 @@
+{
+  "checkpoint": "C:\\Users\\coope\\Test Code\\chess-ancient\\chess-resurected\\models\\cuda-mainline\\latest.pt",
+  "device": "cuda",
+  "draws": 0,
+  "elo_ci95_high": 957.1685890961132,
+  "elo_ci95_low": -99.99982628212047,
+  "elo_estimate": -99.99982628212047,
+  "fm_target": 2300.0,
+  "games": 20,
+  "git_sha": "80ee44ec557e838181d2e0f79713f3a2971d1dad",
+  "losses": 20,
+  "opponent_elo": 2300.0,
+  "opponent_engine": "C:\\Users\\coope\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Stockfish.Stockfish_Microsoft.Winget.Source_8wekyb3d8bbwe\\stockfish\\stockfish.EXE",
+  "score": 0.0,
+  "status": "not_yet_fm_level",
+  "wins": 0
+}
