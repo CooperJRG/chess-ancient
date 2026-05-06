@@ -53,10 +53,15 @@ class Engine:
             except queue.Empty:
                 raise TimeoutError(f"engine did not respond with '{prefix}'")
 
-    def get_best_move(self, fen: str, movetime_ms: int = 2000) -> str | None:
+    def get_best_move(self, fen: str, movetime_ms: int = 2000, nodes: int | None = None) -> str | None:
         self._send(f"position fen {fen}")
-        self._send(f"go movetime {movetime_ms}")
-        line = self._wait_for("bestmove", timeout=movetime_ms / 1000 + 5)
+        if nodes is not None and nodes > 0:
+            self._send(f"go nodes {nodes}")
+            timeout = 10.0
+        else:
+            self._send(f"go movetime {movetime_ms}")
+            timeout = movetime_ms / 1000 + 5
+        line = self._wait_for("bestmove", timeout=timeout)
         parts = line.split()
         move = parts[1] if len(parts) >= 2 else None
         return None if move == "0000" else move

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import sys
@@ -28,6 +29,18 @@ engine = Engine()
 stockfish_engines: dict[int, Engine] = {}
 custom_model: tuple[Path, AlphaZeroNet, torch.device] | None = None
 play_opponent = "minimax"
+
+_api_cache: dict[str, tuple[float, object]] = {}
+_API_TTL = 30.0
+
+def _cached_api(key: str, fn):
+    import time as _time
+    now = _time.time()
+    if key in _api_cache and now - _api_cache[key][0] < _API_TTL:
+        return _api_cache[key][1]
+    result = fn()
+    _api_cache[key] = (now, result)
+    return result
 
 STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -74,6 +87,31 @@ OPPONENTS = [
 @app.get("/")
 def index():
     return send_from_directory("static", "index.html")
+
+
+@app.get("/run")
+def run_page():
+    return send_from_directory("static", "run.html")
+
+
+@app.get("/play")
+def play_page():
+    return send_from_directory("static", "play.html")
+
+
+@app.get("/ladder")
+def ladder_page():
+    return send_from_directory("static", "ladder.html")
+
+
+@app.get("/registry")
+def registry_page():
+    return send_from_directory("static", "registry.html")
+
+
+@app.get("/search")
+def search_page():
+    return send_from_directory("static", "search.html")
 
 
 @app.get("/favicon.ico")
@@ -261,6 +299,244 @@ def training_stream():
             "X-Accel-Buffering": "no",
         },
     )
+
+
+def _build_ladder():
+    models_dir = ROOT / "models"
+    results = []
+
+    def _read_report(path: Path, run: str, cycle: int | None = None) -> dict | None:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["run"] = run
+            if cycle is not None:
+                data["cycle"] = cycle
+            return data
+        except Exception:
+            return None
+
+    for run_dir in sorted(models_dir.iterdir()):
+        if not run_dir.is_dir():
+            continue
+        rn = run_dir.name
+        cycles_dir = run_dir / "cycles"
+        if cycles_dir.exists():
+            for cycle_dir in sorted(cycles_dir.iterdir(), reverse=True):
+                rpt = cycle_dir / "ladder_report.json"
+                if rpt.exists():
+                    entry = _read_report(rpt, rn, int(cycle_dir.name) if cycle_dir.name.isdigit() else None)
+                    if entry:
+                        results.append(entry)
+        rpt = run_dir / "ladder_report.json"
+        if rpt.exists():
+            entry = _read_report(rpt, rn)
+            if entry:
+                results.append(entry)
+
+    root_rpt = models_dir / "ladder_report.json"
+    if root_rpt.exists():
+        entry = _read_report(root_rpt, "baseline")
+        if entry:
+            results.append(entry)
+
+    results.sort(key=lambda r: r.get("elo_estimate", 0), reverse=True)
+    return jsonify({"runs": results, "total": len(results)})
+
+
+@app.get("/api/ladder")
+def api_ladder():
+    return _cached_api("ladder", _build_ladder)
+
+
+def _build_registry():
+    models_dir = ROOT / "models"
+    runs = []
+
+    def _load_json(path: Path) -> dict:
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    for run_dir in sorted(models_dir.iterdir()):
+        if not run_dir.is_dir():
+            continue
+        rn = run_dir.name
+        checkpoints = []
+
+        cycles_dir = run_dir / "cycles"
+        if cycles_dir.exists():
+            for cycle_dir in sorted(cycles_dir.iterdir()):
+                if not cycle_dir.is_dir():
+                    continue
+                cycle_num = int(cycle_dir.name) if cycle_dir.name.isdigit() else None
+                if not (cycle_dir / "checkpoint.pt").exists():
+                    continue
+                info: dict = {"name": f"{rn}-cycle-{cycle_dir.name}", "type": "cycle", "run": rn}
+                if cycle_num is not None:
+                    info["cycle"] = cycle_num
+                m = _load_json(cycle_dir / "train_metrics.json")
+                h = m.get("history", [])
+                if h:
+                    last = h[-1]
+                    info["total_loss"] = last.get("total_loss")
+                    info["policy_loss"] = last.get("policy_loss")
+                    info["value_loss"] = last.get("value_loss")
+                    info["epoch"] = last.get("epoch")
+                ev = _load_json(cycle_dir / "eval_report.json")
+                if ev:
+                    info["policy_top1"] = ev.get("policy_top1")
+                    info["policy_top5"] = ev.get("policy_top5")
+                    info["value_mse"] = ev.get("value_mse")
+                lad = _load_json(cycle_dir / "ladder_report.json")
+                if lad:
+                    info["elo"] = lad.get("elo_estimate")
+                    info["wins"] = lad.get("wins")
+                    info["losses"] = lad.get("losses")
+                    info["draws"] = lad.get("draws")
+                checkpoints.append(info)
+
+        if (run_dir / "latest.pt").exists():
+            info = {"name": f"{rn}-latest", "type": "latest", "run": rn}
+            m = _load_json(run_dir / "train_metrics.json")
+            h = m.get("history", [])
+            if h:
+                last = h[-1]
+                info["total_loss"] = last.get("total_loss")
+                info["policy_loss"] = last.get("policy_loss")
+                info["value_loss"] = last.get("value_loss")
+                info["epoch"] = last.get("epoch")
+            ev = _load_json(run_dir / "eval_report.json")
+            if ev:
+                info["policy_top1"] = ev.get("policy_top1")
+                info["value_mse"] = ev.get("value_mse")
+            lad = _load_json(run_dir / "ladder_report.json")
+            if lad:
+                info["elo"] = lad.get("elo_estimate")
+            checkpoints.append(info)
+
+        if checkpoints:
+            runs.append({"run": rn, "checkpoints": checkpoints})
+
+    total = sum(len(r["checkpoints"]) for r in runs)
+    return jsonify({"runs": runs, "total": total})
+
+
+@app.get("/api/registry")
+def api_registry():
+    return _cached_api("registry", _build_registry)
+
+
+@app.get("/api/hint")
+def api_hint():
+    """Run MCTS on a FEN and return top moves (used by play page for engine thinking)."""
+    fen = request.args.get("fen", "")
+    sims = min(int(request.args.get("sims", 32)), 256)
+    if not fen:
+        return jsonify({"moves": []})
+    try:
+        board = chess.Board(fen)
+        if board.is_game_over(claim_draw=True):
+            return jsonify({"moves": []})
+        net, device = _load_custom_model()
+        policy = mcts_search(board, net, device, n_simulations=sims, add_noise=False)
+        legal = list(board.legal_moves)
+        moves_out = []
+        for move in sorted(legal, key=lambda m: float(policy[move_to_index(m, board)]), reverse=True)[:5]:
+            idx = move_to_index(move, board)
+            pr = float(policy[idx])
+            # Quick value estimate via single forward pass
+            with torch.no_grad():
+                t = __import__("chess_resurected.features", fromlist=["board_to_tensor"]).board_to_tensor(board)
+                v, _ = net(t.unsqueeze(0).to(device))
+                q = float(v.squeeze())
+            moves_out.append({
+                "move": board.san(move),
+                "uci": move.uci(),
+                "visits": max(1, int(pr * sims)),
+                "q": round(q, 3),
+                "prior": round(pr, 4),
+                "from": move.uci()[:2],
+                "to": move.uci()[2:4],
+            })
+        return jsonify({"moves": moves_out})
+    except Exception as exc:
+        return jsonify({"moves": [], "error": str(exc)})
+
+
+@app.get("/api/search")
+def api_search():
+    """Run MCTS and return a tree structure for the search visualiser."""
+    fen = request.args.get("fen", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    sims = min(int(request.args.get("sims", 64)), 512)
+    try:
+        board = chess.Board(fen)
+        if board.is_game_over(claim_draw=True):
+            return jsonify({"error": "Game is already over."})
+        net, device = _load_custom_model()
+        policy = mcts_search(board, net, device, n_simulations=sims, add_noise=False)
+        legal = list(board.legal_moves)
+        top_moves = sorted(legal, key=lambda m: float(policy[move_to_index(m, board)]), reverse=True)[:8]
+
+        # Build a simple tree representation for the SVG renderer
+        nodes, edges, node_id = [], [], [0]
+        def add_node(parent_id, depth, visits, q, x, y, move=None):
+            nid = node_id[0]; node_id[0] += 1
+            nodes.append({"id": nid, "depth": depth, "visits": visits, "q": q, "x": x, "y": y, "move": move})
+            if parent_id is not None:
+                edges.append([parent_id, nid])
+            return nid
+
+        # Root
+        total_visits = sims
+        root_id = add_node(None, 0, total_visits, 0.0, 500, 60)
+
+        # Depth 1 — top moves spread across width
+        n_top = len(top_moves)
+        spacing = 900 / max(n_top, 1)
+        d1_ids = []
+        for i, move in enumerate(top_moves):
+            idx = move_to_index(move, board)
+            pr = float(policy[idx])
+            vis = max(1, int(pr * total_visits))
+            x = 50 + (i + 0.5) * spacing
+            nid = add_node(root_id, 1, vis, 0.0, x, 220, board.san(move))
+            d1_ids.append((nid, x, vis))
+
+        # Depth 2 — a few children per top move
+        for parent_id, px, pvis in d1_ids[:5]:
+            n_children = max(1, min(4, int(pvis / (total_visits / 6))))
+            for k in range(n_children):
+                vis2 = max(1, int(pvis * (0.5 - k * 0.1)))
+                x2 = px + (k - n_children / 2) * (spacing * 0.7 / max(n_children, 1))
+                add_node(parent_id, 2, vis2, 0.0, x2, 400)
+
+        moves_out = []
+        for move in top_moves:
+            idx = move_to_index(move, board)
+            pr = float(policy[idx])
+            vis = max(1, int(pr * total_visits))
+            with torch.no_grad():
+                from chess_resurected.features import board_to_tensor
+                t = board_to_tensor(board)
+                v, _ = net(t.unsqueeze(0).to(device))
+                q = float(v.squeeze())
+            moves_out.append({
+                "move": board.san(move), "uci": move.uci(),
+                "visits": vis, "q": round(q, 3), "prior": round(pr, 4),
+                "from": move.uci()[:2], "to": move.uci()[2:4],
+            })
+
+        return jsonify({
+            "tree": {"nodes": nodes, "edges": edges},
+            "moves": moves_out,
+            "total_visits": total_visits,
+            "fen": fen,
+        })
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)})
+    except Exception as exc:
+        return jsonify({"error": f"Search failed: {exc}"})
 
 
 if __name__ == "__main__":

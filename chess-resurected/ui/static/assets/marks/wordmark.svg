@@ -1,0 +1,13 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 100" fill="none">
+  <defs>
+    <linearGradient id="wm" x1="0" y1="0" x2="600" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4F86FF"></stop><stop offset=".4" stop-color="#9B6CFF"></stop><stop offset=".7" stop-color="#FF5BA8"></stop><stop offset="1" stop-color="#FFB347"></stop>
+    </linearGradient>
+  </defs>
+  <g transform="translate(10 10)">
+    <circle cx="40" cy="40" r="38" stroke="url(#wm)" stroke-width="3"></circle>
+    <path d="M28 22 L28 58 M28 22 L48 22 Q58 22 58 32 Q58 42 48 42 L28 42 M44 42 L56 58" stroke="url(#wm)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <text x="100" y="62" font-family="Geist, Inter, sans-serif" font-weight="700" font-size="34" letter-spacing="-1" fill="url(#wm)">CHESS RESURRECTED</text>
+</svg>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play · Chess Resurrected</title>
+<link rel="stylesheet" href="/static/colors_and_type.css">
+<link rel="stylesheet" href="/static/chrome.css">
+<link rel="stylesheet" href="/static/light.css">
+<script src="/static/theme.js"></script>
+<script src="/static/js/chess.min.js"></script>
+<style>
+  .play-grid{ display:grid; grid-template-columns:300px 1fr 300px; gap:20px; align-items:start;}
+  @media(max-width:1100px){ .play-grid{ grid-template-columns:260px 1fr;} .right-rail{ display:none;} }
+  @media(max-width:700px){ .play-grid{ grid-template-columns:1fr;} }
+
+  .opp-list{ display:flex; flex-direction:column; gap:6px;}
+  .opp{
+    display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+    padding:12px 14px; border-radius:var(--r-md);
+    background:var(--panel-2); border:1px solid var(--line);
+    cursor:pointer; transition:all 180ms var(--ease-out);
+  }
+  .opp:hover{ background:var(--panel-3); transform:translateX(2px);}
+  .opp.sel{ background:linear-gradient(var(--panel-2),var(--panel-2)) padding-box, var(--grad-hero) border-box; border:1px solid transparent;}
+  .opp.disabled{ opacity:.45; cursor:not-allowed; transform:none !important;}
+  .opp .av{ width:32px; height:32px; border-radius:8px; background:var(--panel-3); display:grid; place-items:center;}
+  .opp .av img{ width:20px; height:20px;}
+  .opp .nm{ font-weight:600; font-size:.88rem;}
+  .opp .meta{ font-size:.72rem; color:var(--muted); font-family:var(--font-mono); margin-top:1px;}
+  .opp .elo{ font-family:var(--font-mono); font-size:.82rem; color:var(--text-2); font-weight:600;}
+  .grp-label{ font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:500; margin:14px 0 8px 2px;}
+
+  /* Board */
+  .board-wrap{ position:relative; border-radius:var(--r-lg); overflow:hidden; border:2px solid var(--line); box-shadow:var(--shadow-card);}
+  .board{ display:grid; grid-template-columns:repeat(8,1fr); aspect-ratio:1; user-select:none;}
+  .sq{
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(1.8rem,4vw,3rem); position:relative; cursor:pointer;
+    transition:background 120ms;
+  }
+  .sq.l{ background:var(--square-light);}
+  .sq.d{ background:var(--square-dark);}
+  .sq.sel{ box-shadow:inset 0 0 0 4px rgba(79,134,255,.8);}
+  .sq.legal::after{ content:""; position:absolute; width:28%; height:28%; border-radius:50%; background:rgba(79,134,255,.45); pointer-events:none;}
+  .sq.legal.occ::after{ width:92%; height:92%; border-radius:50%; background:rgba(79,134,255,.22); border:3px solid rgba(79,134,255,.5); box-sizing:border-box;}
+  .sq.last-from{ background:rgba(255,179,71,.35) !important;}
+  .sq.last-to{ background:rgba(255,179,71,.55) !important;}
+  .sq .pc{ line-height:1; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));}
+  .board-meta{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:.88rem; color:var(--text-2);}
+  .turn-badge{ display:inline-flex; align-items:center; gap:7px; padding:5px 12px; border-radius:var(--r-pill); background:var(--panel-2); border:1px solid var(--line);}
+  .turn-swatch{ width:12px; height:12px; border-radius:3px;}
+
+  /* Right rail */
+  .right-rail{ display:flex; flex-direction:column; gap:14px;}
+  .vs-card{ padding:18px; border-radius:var(--r-lg); background:var(--panel); border:1px solid var(--line); position:relative; overflow:hidden;}
+  .vs-card::before{ content:""; position:absolute; inset:0; background:var(--grad-hero-soft); opacity:.35; pointer-events:none;}
+  .vs-label{ font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:500;}
+  .vs-row{ display:flex; align-items:center; gap:10px; margin-top:10px; position:relative;}
+  .vs-av{ width:36px; height:36px; border-radius:9px; background:var(--panel-2); display:grid; place-items:center; flex-shrink:0;}
+  .vs-av img{ width:22px; height:22px;}
+  .vs-who{ font-weight:700; font-size:.95rem;}
+  .vs-sub{ display:block; font-size:.72rem; color:var(--muted); font-family:var(--font-mono); font-weight:500; margin-top:1px;}
+  .vs-divider{ text-align:center; font-family:var(--font-mono); font-size:.68rem; color:var(--dim); letter-spacing:.2em; margin:6px 0;}
+
+  .think-card{ padding:14px; border-radius:var(--r-lg); background:var(--panel); border:1px solid var(--line);}
+  .think-label{ font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:500; margin-bottom:10px;}
+  .move-stream{ font-family:var(--font-mono); font-size:.8rem; line-height:1.8; color:var(--text-2); min-height:80px;}
+  .move-stream .best{ color:var(--text); font-weight:600;}
+  .eval-wrap{ margin-top:10px;}
+  .eval-bar{ height:7px; border-radius:4px; background:var(--panel-3); overflow:hidden; position:relative;}
+  .eval-fill{ height:100%; background:var(--grad-hero); transition:width .4s var(--ease-out); width:50%;}
+  .eval-text{ font-family:var(--font-mono); font-size:.75rem; color:var(--text-2); margin-top:4px; text-align:center;}
+
+  .ctrl-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .pgn-box{
+    min-height:60px; max-height:120px; overflow:auto; padding:8px 10px;
+    border:1px solid var(--line); border-radius:var(--r-md); background:var(--field-bg);
+    font-family:var(--font-mono); font-size:.78rem; color:var(--text-2); white-space:pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="curtain"><img class="mark" src="/static/assets/marks/pawn.svg" alt=""></div>
+
+<header class="topbar">
+  <div class="logo"><img src="/static/assets/marks/wordmark.svg" alt="Chess Resurrected" style="height:24px;width:auto;display:block;"></div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/run">Run</a>
+    <a href="/registry">Registry</a>
+    <a href="/ladder">Ladder</a>
+    <a href="/search">Search</a>
+    <a href="/play" class="active">Play</a>
+  </nav>
+  <div class="right">
+    <span class="pill" id="turn-pill">Your move</span>
+    <button class="btn ghost" id="flip-btn">Flip board</button>
+    <div class="avatar">CR</div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="page-header fade-up" style="animation-delay:200ms">
+    <div class="crumb">Play test</div>
+    <h1>Pick an <span class="accent">opponent.</span></h1>
+    <div class="meta"><span>Custom checkpoints, Stockfish levels, and the Rust minimax baseline.</span></div>
+  </section>
+
+  <section class="play-grid fade-up" style="animation-delay:340ms">
+
+    <!-- Opponent picker -->
+    <aside>
+      <div class="grp-label">Custom model</div>
+      <div class="opp-list" id="opp-custom"></div>
+      <div class="grp-label">Stockfish</div>
+      <div class="opp-list" id="opp-stockfish"></div>
+      <div class="grp-label">Baseline</div>
+      <div class="opp-list" id="opp-base"></div>
+    </aside>
+
+    <!-- Board -->
+    <div>
+      <div class="board-wrap"><div class="board" id="board"></div></div>
+      <div class="board-meta">
+        <span class="turn-badge"><span class="turn-swatch" id="turn-swatch" style="background:#fff; border:1px solid #ccc;"></span><span id="turn-text">Your move (White)</span></span>
+        <span id="move-num" style="font-family:var(--font-mono);">Move 1</span>
+      </div>
+      <div class="pgn-box" id="pgn" style="margin-top:10px;">-</div>
+    </div>
+
+    <!-- Right rail -->
+    <aside class="right-rail">
+      <div class="vs-card">
+        <div class="vs-label">Now playing</div>
+        <div class="vs-row">
+          <div class="vs-av" style="background:var(--panel-3);"><span style="font-weight:700; font-size:.75rem; font-family:var(--font-mono);">YOU</span></div>
+          <div class="vs-who">Player <span class="vs-sub">white · human</span></div>
+        </div>
+        <div class="vs-divider">— VS —</div>
+        <div class="vs-row">
+          <div class="vs-av" id="opp-av"><img id="opp-mark" src="/static/assets/marks/rook.svg"></div>
+          <div class="vs-who" id="opp-name">Rust minimax<span class="vs-sub" id="opp-sub">Depth 3</span></div>
+        </div>
+      </div>
+
+      <div class="think-card">
+        <div class="think-label">Engine evaluation</div>
+        <div class="move-stream" id="think-stream">Waiting for move…</div>
+        <div class="eval-wrap">
+          <div class="eval-bar"><div class="eval-fill" id="eval-fill"></div></div>
+          <div class="eval-text" id="eval-text">—</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ctrl-row" style="margin-bottom:8px;">
+          <button class="btn primary" id="new-game-btn">New game</button>
+          <button class="btn ghost" id="resign-btn">Resign</button>
+        </div>
+        <div class="ctrl-row">
+          <button class="btn" id="undo-btn">Undo</button>
+          <button class="btn" id="hint-btn">Hint</button>
+        </div>
+      </div>
+    </aside>
+
+  </section>
+</main>
+
+<script>
+// ── chess engine ─────────────────────────────────────────────────────────────
+const game = new Chess();
+let flipped = false;
+let thinking = false;
+let selectedSq = null;
+let legalTargets = [];
+let lastFrom = null, lastTo = null;
+let currentOpponent = 'minimax';
+let currentOpponentLabel = 'Rust minimax';
+
+const PIECES = {
+  'k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟',
+  'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙'
+};
+const MARK_MAP = { custom: 'king', minimax: 'rook' };
+function oppMark(id) {
+  if (id.startsWith('stockfish')) return 'pawn';
+  if (id === 'custom') return 'king';
+  return 'rook';
+}
+
+// ── board rendering ───────────────────────────────────────────────────────────
+function renderBoard() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  const rows = game.board();
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const row = flipped ? r : 7 - r;
+      const file = flipped ? 7 - f : f;
+      const piece = rows[row][file];
+      const sqName = 'abcdefgh'[file] + (row + 1);
+      const isLight = (row + file) % 2 === 0;
+      const div = document.createElement('div');
+      div.className = 'sq ' + (isLight ? 'l' : 'd');
+      div.dataset.sq = sqName;
+      if (sqName === lastFrom) div.classList.add('last-from');
+      if (sqName === lastTo) div.classList.add('last-to');
+      if (sqName === selectedSq) div.classList.add('sel');
+      if (legalTargets.includes(sqName)) {
+        div.classList.add('legal');
+        if (piece) div.classList.add('occ');
+      }
+      if (piece) {
+        const span = document.createElement('span');
+        span.className = 'pc';
+        span.textContent = piece.color === 'b' ? PIECES[piece.type] : PIECES[piece.type.toUpperCase()];
+        div.appendChild(span);
+      }
+      div.addEventListener('click', () => handleClick(sqName));
+      boardEl.appendChild(div);
+    }
+  }
+  updateMeta();
+}
+
+function updateMeta() {
+  const turnSwatch = document.getElementById('turn-swatch');
+  const turnText = document.getElementById('turn-text');
+  const turnPill = document.getElementById('turn-pill');
+  const isWhite = game.turn() === 'w';
+  if (game.game_over()) {
+    const msg = game.in_checkmate() ? ((isWhite?'Black':'White')+' wins') : 'Draw';
+    turnText.textContent = msg;
+    turnPill.textContent = msg;
+    return;
+  }
+  if (thinking) {
+    turnText.textContent = `${currentOpponentLabel} thinking…`;
+    turnPill.textContent = 'Thinking…';
+    return;
+  }
+  turnSwatch.style.background = isWhite ? '#fff' : '#1a1a2e';
+  turnSwatch.style.border = isWhite ? '1px solid #ccc' : '1px solid #444';
+  const isYourTurn = isWhite; // player is always white
+  turnText.textContent = isYourTurn ? 'Your move (White)' : `${currentOpponentLabel} to move`;
+  turnPill.textContent = isYourTurn ? 'Your move' : 'Engine thinking';
+  document.getElementById('move-num').textContent = `Move ${Math.ceil(game.history().length / 2) + 1}`;
+  document.getElementById('pgn').textContent = game.pgn({ max_width: 60, newline_char: '\n' }) || '—';
+}
+
+function handleClick(sqName) {
+  if (thinking || game.game_over() || game.turn() !== 'w') return;
+  const piece = game.get(sqName);
+
+  if (selectedSq === sqName) {
+    // Deselect
+    selectedSq = null; legalTargets = [];
+    renderBoard(); return;
+  }
+
+  if (selectedSq && legalTargets.includes(sqName)) {
+    // Attempt move
+    const rank = sqName[1];
+    const isPromo = game.get(selectedSq)?.type === 'p' && (rank === '8' || rank === '1');
+    const move = game.move({ from: selectedSq, to: sqName, promotion: 'q' });
+    if (move) {
+      lastFrom = selectedSq; lastTo = sqName;
+      selectedSq = null; legalTargets = [];
+      renderBoard();
+      askEngine();
+    } else {
+      selectedSq = null; legalTargets = [];
+      renderBoard();
+    }
+    return;
+  }
+
+  if (piece && piece.color === 'w') {
+    selectedSq = sqName;
+    legalTargets = game.moves({ square: sqName, verbose: true }).map(m => m.to);
+    renderBoard();
+  } else {
+    selectedSq = null; legalTargets = [];
+    renderBoard();
+  }
+}
+
+// ── engine ───────────────────────────────────────────────────────────────────
+function askEngine() {
+  if (game.game_over()) return;
+  thinking = true;
+  renderBoard();
+  document.getElementById('think-stream').innerHTML = '<span style="color:var(--muted)">Engine thinking…</span>';
+
+  fetch('/move', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fen: game.fen(), opponent: currentOpponent })
+  }).then(r => r.json()).then(data => {
+    thinking = false;
+    if (data.error) { setThink(`Error: ${data.error}`); renderBoard(); return; }
+    if (!data.engine_move) { renderBoard(); return; }
+    const uci = data.engine_move;
+    const move = game.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
+    if (move) {
+      lastFrom = uci.slice(0,2); lastTo = uci.slice(2,4);
+      renderBoard();
+      fetchHint(game.fen());
+    }
+  }).catch(e => {
+    thinking = false;
+    setThink('Engine unavailable.');
+    renderBoard();
+  });
+}
+
+function setThink(html) {
+  document.getElementById('think-stream').innerHTML = html;
+}
+
+function fetchHint(fen) {
+  fetch(`/api/hint?fen=${encodeURIComponent(fen)}`).then(r => r.json()).then(data => {
+    if (!data.moves || !data.moves.length) return;
+    const total = data.moves.reduce((s, m) => s + m.visits, 0) || 1;
+    setThink(data.moves.map((m, i) =>
+      `<div>${i===0?'<span class="best">':''}${m.move} · q ${m.q>=0?'+':''}${m.q.toFixed(2)} · ${m.visits}v${i===0?'</span>':''}</div>`
+    ).join(''));
+    // Eval bar: map q [-1,1] -> [0,100]%
+    const q = data.moves[0]?.q ?? 0;
+    const pct = (q + 1) / 2 * 100;
+    document.getElementById('eval-fill').style.width = pct.toFixed(1) + '%';
+    const sign = q >= 0 ? '+' : '';
+    document.getElementById('eval-text').textContent = `${sign}${q.toFixed(2)}`;
+  }).catch(() => {});
+}
+
+// ── opponents ─────────────────────────────────────────────────────────────────
+function populateOpponents(data) {
+  currentOpponent = data.current || 'minimax';
+  const containers = { custom: 'opp-custom', stockfish: 'opp-stockfish', base: 'opp-base' };
+  Object.values(containers).forEach(id => document.getElementById(id).innerHTML = '');
+
+  data.opponents.forEach(o => {
+    const sfBlocked = o.id.startsWith('stockfish') && !data.stockfish_available;
+    const custBlocked = o.id === 'custom' && !data.custom_available;
+    const blocked = sfBlocked || custBlocked;
+    const mark = oppMark(o.id);
+    const elo = o.id === 'minimax' ? '~1200' : o.id === 'custom' ? (data.custom_elo ? Math.round(data.custom_elo) : '?') :
+      o.id === 'stockfish-1' ? '800' : o.id === 'stockfish-5' ? '1900' : o.id === 'stockfish-10' ? '2400' : '3200';
+    const subtitle = blocked ? (sfBlocked ? 'not found' : 'no checkpoint') :
+      o.id === 'minimax' ? 'depth 3 · alpha-beta' : o.id === 'custom' ? 'MCTS · latest ckpt' :
+      o.id === 'stockfish-1' ? 'skill 1' : o.id === 'stockfish-5' ? 'skill 5' :
+      o.id === 'stockfish-10' ? 'skill 10' : 'skill 20';
+
+    const div = document.createElement('div');
+    div.className = 'opp' + (o.id === currentOpponent ? ' sel' : '') + (blocked ? ' disabled' : '');
+    div.innerHTML = `
+      <div class="av"><img src="/static/assets/marks/${mark}.svg"></div>
+      <div><div class="nm">${o.label}</div><div class="meta">${subtitle}</div></div>
+      <span class="elo">${elo}</span>`;
+    if (!blocked) {
+      div.addEventListener('click', () => selectOpponent(o.id, o.label, mark, elo));
+    }
+    const catId = o.id === 'custom' ? 'opp-custom' : o.id === 'minimax' ? 'opp-base' : 'opp-stockfish';
+    document.getElementById(catId).appendChild(div);
+  });
+  updateOppDisplay(currentOpponent, data.current_label || 'Rust minimax', oppMark(currentOpponent), '');
+}
+
+function selectOpponent(id, label, mark, elo) {
+  fetch('/play/opponent', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ opponent: id })
+  }).then(r => r.json()).then(data => {
+    if (!data.ok) return;
+    currentOpponent = id; currentOpponentLabel = label;
+    document.querySelectorAll('.opp').forEach(o => o.classList.remove('sel'));
+    event.currentTarget.classList.add('sel');
+    updateOppDisplay(id, label, mark, elo);
+    newGame();
+  });
+}
+
+function updateOppDisplay(id, label, mark, elo) {
+  currentOpponentLabel = label;
+  document.getElementById('opp-mark').src = `/static/assets/marks/${mark}.svg`;
+  const nameEl = document.getElementById('opp-name');
+  nameEl.childNodes[0].textContent = label + ' ';
+  document.getElementById('opp-sub').textContent = elo ? `${elo} Elo · black` : 'black';
+}
+
+// ── controls ─────────────────────────────────────────────────────────────────
+function newGame() {
+  game.reset();
+  selectedSq = null; legalTargets = []; lastFrom = null; lastTo = null; thinking = false;
+  document.getElementById('think-stream').textContent = 'Waiting for move…';
+  document.getElementById('eval-fill').style.width = '50%';
+  document.getElementById('eval-text').textContent = '—';
+  document.getElementById('pgn').textContent = '—';
+  renderBoard();
+}
+
+document.getElementById('new-game-btn').addEventListener('click', newGame);
+document.getElementById('resign-btn').addEventListener('click', () => {
+  document.getElementById('turn-text').textContent = 'You resigned.';
+  document.getElementById('turn-pill').textContent = 'Resigned';
+});
+document.getElementById('flip-btn').addEventListener('click', () => { flipped = !flipped; renderBoard(); });
+document.getElementById('undo-btn').addEventListener('click', () => {
+  if (thinking) return;
+  game.undo(); game.undo(); // undo engine move + player move
+  lastFrom = null; lastTo = null; selectedSq = null; legalTargets = [];
+  renderBoard();
+  document.getElementById('pgn').textContent = game.pgn({ max_width: 60, newline_char: '\n' }) || '—';
+});
+document.getElementById('hint-btn').addEventListener('click', () => fetchHint(game.fen()));
+
+// ── boot ──────────────────────────────────────────────────────────────────────
+fetch('/play/opponents').then(r => r.json()).then(populateOpponents);
+renderBoard();
+</script>
+</body>
+</html>

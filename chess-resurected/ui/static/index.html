@@ -1,865 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess Resurected Control Room</title>
-  <link rel="stylesheet" href="/static/css/chessboard.min.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    :root {
-      --bg: #0b0f12;
-      --panel: #141a1e;
-      --panel-2: #1b2429;
-      --line: #2a363d;
-      --text: #ecf2f0;
-      --muted: #8d9b9a;
-      --gold: #d8b45d;
-      --blue: #61a5ff;
-      --green: #4fc27b;
-      --red: #f46d6d;
-      --violet: #a985ff;
-      --ink: #090d0f;
-    }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      color: var(--text);
-      font-family: Inter, "Segoe UI", system-ui, sans-serif;
-      background:
-        linear-gradient(115deg, rgba(216,180,93,.08), transparent 26%),
-        linear-gradient(225deg, rgba(97,165,255,.11), transparent 30%),
-        var(--bg);
-    }
-    button, input, select { font: inherit; }
-    button {
-      border: 1px solid transparent;
-      border-radius: 8px;
-      color: var(--text);
-      background: var(--panel-2);
-      cursor: pointer;
-      min-height: 38px;
-    }
-    button:disabled { opacity: .45; cursor: default; }
-    input, select {
-      width: 100%;
-      min-height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      color: var(--text);
-      background: #0f1518;
-      padding: 7px 9px;
-    }
-    .shell {
-      width: min(1500px, calc(100vw - 32px));
-      margin: 0 auto;
-      padding: 18px 0 24px;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      padding: 12px 0 18px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .mark {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(216,180,93,.4);
-      background: #15140e;
-      border-radius: 8px;
-      color: var(--gold);
-      font-size: 24px;
-      font-weight: 800;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(1.2rem, 2vw, 1.7rem);
-      letter-spacing: 0;
-    }
-    .subtle { color: var(--muted); font-size: .9rem; }
-    .status-strip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 28px;
-      padding: 4px 10px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--muted);
-      background: rgba(20,26,30,.76);
-      font-size: .8rem;
-      white-space: nowrap;
-    }
-    .pill.green { color: var(--green); border-color: rgba(79,194,123,.35); }
-    .pill.gold { color: var(--gold); border-color: rgba(216,180,93,.35); }
-    .pill.red { color: var(--red); border-color: rgba(244,109,109,.35); }
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(300px, 390px) 1fr;
-      gap: 16px;
-      align-items: start;
-    }
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(20,26,30,.88);
-      box-shadow: 0 18px 60px rgba(0,0,0,.22);
-    }
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-    }
-    .panel-title {
-      margin: 0;
-      font-size: .92rem;
-      color: var(--text);
-      font-weight: 750;
-    }
-    .panel-body { padding: 16px; }
-    .control-stack { display: grid; gap: 12px; }
-    .field { display: grid; gap: 6px; }
-    .field label {
-      color: var(--muted);
-      font-size: .77rem;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .primary {
-      background: var(--gold);
-      color: var(--ink);
-      border-color: rgba(216,180,93,.9);
-      font-weight: 800;
-    }
-    .danger {
-      background: rgba(244,109,109,.14);
-      border-color: rgba(244,109,109,.45);
-      color: #ffd3d3;
-      font-weight: 700;
-    }
-    .ghost {
-      background: transparent;
-      border-color: var(--line);
-      color: var(--muted);
-      font-weight: 700;
-    }
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .metric {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(27,36,41,.78);
-      padding: 12px;
-      min-height: 82px;
-    }
-    .metric span {
-      display: block;
-      color: var(--muted);
-      font-size: .74rem;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-    .metric strong {
-      display: block;
-      margin-top: 8px;
-      font-size: clamp(1.15rem, 2vw, 1.8rem);
-      line-height: 1;
-      color: var(--text);
-    }
-    .metric strong.blue { color: var(--blue); }
-    .metric strong.green { color: var(--green); }
-    .metric strong.violet { color: var(--violet); }
-    .metric strong.gold { color: var(--gold); }
-    .progress {
-      height: 12px;
-      border-radius: 999px;
-      background: #0e1417;
-      border: 1px solid var(--line);
-      overflow: hidden;
-    }
-    .progress > div {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--gold), var(--green), var(--blue));
-      transition: width .25s ease;
-    }
-    .stage-row {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
-      margin: 12px 0 16px;
-    }
-    .stage {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 9px 8px;
-      color: var(--muted);
-      background: rgba(15,21,24,.7);
-      text-align: center;
-      font-size: .76rem;
-    }
-    .stage.active { color: var(--gold); border-color: rgba(216,180,93,.55); }
-    .stage.done { color: var(--green); border-color: rgba(79,194,123,.4); }
-    .status-msg {
-      min-height: 22px;
-      color: var(--muted);
-      font-size: .92rem;
-      margin-bottom: 12px;
-    }
-    .progress-readout {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin: 12px 0;
-    }
-    .readout {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 9px 10px;
-      background: #0f1518;
-      min-width: 0;
-    }
-    .readout span {
-      display: block;
-      color: var(--muted);
-      font-size: .7rem;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 4px;
-    }
-    .readout strong {
-      display: block;
-      color: var(--text);
-      font-size: .92rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .run-log {
-      height: 160px;
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #0f1518;
-      padding: 10px;
-      margin-top: 12px;
-      font-family: Consolas, "Cascadia Mono", monospace;
-      font-size: .78rem;
-      color: var(--muted);
-    }
-    .log-line { display: flex; gap: 9px; padding: 2px 0; }
-    .log-time { color: var(--gold); flex: 0 0 auto; }
-    .artifact-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .artifact {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
-      background: #0f1518;
-      min-width: 0;
-    }
-    .artifact span {
-      display: block;
-      color: var(--muted);
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 5px;
-    }
-    .artifact code {
-      display: block;
-      color: var(--text);
-      font-size: .78rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .workbench {
-      display: grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 16px;
-    }
-    #board-wrap { width: 100%; max-width: 520px; margin: 0 auto; }
-    #board { width: 100%; }
-    .play-actions { display: flex; gap: 10px; margin-top: 12px; }
-    .opponent-bar {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .opponent-current {
-      border: 1px solid rgba(216,180,93,.38);
-      border-radius: 8px;
-      padding: 9px 10px;
-      background: rgba(216,180,93,.08);
-      color: var(--gold);
-      font-size: .86rem;
-      font-weight: 750;
-    }
-    .opponent-current span {
-      color: var(--muted);
-      font-weight: 600;
-    }
-    #pgn {
-      margin-top: 12px;
-      padding: 10px;
-      min-height: 84px;
-      max-height: 150px;
-      overflow: auto;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #0f1518;
-      white-space: pre-wrap;
-      font-size: .84rem;
-    }
-    .chart {
-      width: 100%;
-      height: 136px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #0f1518;
-      margin-top: 10px;
-    }
-    .hidden { display: none; }
-    @media (max-width: 1050px) {
-      .layout, .workbench { grid-template-columns: 1fr; }
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 640px) {
-      .shell { width: min(100vw - 20px, 1500px); padding-top: 10px; }
-      .topbar, .status-strip { align-items: flex-start; justify-content: flex-start; }
-      .topbar { flex-direction: column; }
-      .two, .three, .metrics, .artifact-grid, .stage-row { grid-template-columns: 1fr; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chess Resurrected</title>
+<link rel="stylesheet" href="/static/colors_and_type.css">
+<link rel="stylesheet" href="/static/chrome.css">
+<link rel="stylesheet" href="/static/light.css">
+<script src="/static/theme.js"></script>
+<style>
+  .hero-wrap{ padding:80px 0 60px; position:relative;}
+  .hero-wrap::before{
+    content:""; position:absolute; inset:-30%;
+    background:
+      radial-gradient(35% 25% at 25% 30%, rgba(79,134,255,.45), transparent 60%),
+      radial-gradient(30% 22% at 78% 60%, rgba(255,91,168,.32), transparent 60%),
+      radial-gradient(28% 20% at 55% 90%, rgba(255,179,71,.28), transparent 60%);
+    filter:blur(60px); pointer-events:none; z-index:0;
+    animation:auroraPan 14s ease-in-out infinite;
+  }
+  .hero-wrap .inner{ position:relative; z-index:1; text-align:center;}
+  .eyebrow{ font-size:.78rem; text-transform:uppercase; letter-spacing:.18em; color:var(--text-2); margin-bottom:24px; font-weight:500;}
+  .hero-title{ font-size:clamp(3.5rem,9vw,7.5rem); font-weight:800; letter-spacing:-.045em; line-height:.9;}
+  .hero-title .grad{ background:var(--grad-hero); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero-sub{ font-size:1.2rem; color:var(--text-2); max-width:620px; margin:32px auto 0; line-height:1.5;}
+  .cta-row{ display:flex; gap:14px; justify-content:center; margin-top:40px;}
+
+  .surface-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:24px; margin-top:80px;}
+  @media(max-width:700px){ .surface-grid{ grid-template-columns:1fr;} }
+  .surface{
+    position:relative; padding:36px; border-radius:var(--r-xl);
+    background:var(--panel); border:1px solid var(--line);
+    overflow:hidden; cursor:pointer;
+    transition:all 320ms var(--ease-out);
+    text-decoration:none; color:var(--text); display:block;
+  }
+  .surface::before{
+    content:""; position:absolute; inset:0; background:var(--grad-hero-soft); opacity:0;
+    transition:opacity 320ms var(--ease-out); pointer-events:none;
+  }
+  .surface:hover{ transform:translateY(-4px); border-color:transparent;}
+  .surface:hover::before{ opacity:1;}
+  .surface .num{ font-family:var(--font-mono); font-size:.75rem; color:var(--muted); letter-spacing:.12em;}
+  .surface h2{ font-size:2rem; font-weight:700; letter-spacing:-.02em; margin:18px 0 14px; line-height:1.05;}
+  .surface h2 .grad{ background:var(--grad-hero); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .surface p{ color:var(--text-2); line-height:1.55; margin:0; font-size:.96rem;}
+  .surface .arrow{
+    margin-top:32px; display:inline-flex; align-items:center; gap:8px;
+    color:var(--text); font-weight:500; font-size:.92rem;
+    transition:gap 240ms var(--ease-out);
+  }
+  .surface:hover .arrow{ gap:14px;}
+  .surface .mark{ position:absolute; right:24px; top:24px; width:60px; opacity:.6;}
+  .surface .status-dot{
+    display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--muted);
+    margin-right:6px; vertical-align:middle;
+  }
+  .surface .status-dot.live{ background:var(--green); box-shadow:0 0 6px var(--green);}
+
+  .footer{ padding:80px 0 40px; text-align:center; color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); margin-top:80px;}
+</style>
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="mark">R</div>
-        <div>
-          <h1>Chess Resurected Control Room</h1>
-          <div class="subtle">Self-play data, CUDA training, evaluation, and ladder checks in one run.</div>
-        </div>
+
+<div class="curtain"><img class="mark" src="/static/assets/marks/king.svg" alt=""></div>
+
+<header class="topbar">
+  <div class="logo"><img src="/static/assets/marks/wordmark.svg" alt="Chess Resurrected" style="height:24px;width:auto;display:block;"></div>
+  <nav>
+    <a href="/" class="active">Home</a>
+    <a href="/run">Run</a>
+    <a href="/registry">Registry</a>
+    <a href="/ladder">Ladder</a>
+    <a href="/search">Search</a>
+    <a href="/play">Play</a>
+  </nav>
+  <div class="right">
+    <span class="pill" id="status-pill">idle</span>
+    <div class="avatar">CR</div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="hero-wrap">
+    <div class="inner">
+      <div class="eyebrow fade-up" style="animation-delay:200ms" id="run-eyebrow">Chess Resurrected · AlphaZero training</div>
+      <h1 class="hero-title fade-up" style="animation-delay:300ms">
+        A neural chess engine,<br><span class="grad">resurrected.</span>
+      </h1>
+      <p class="hero-sub fade-up" style="animation-delay:480ms">
+        Train AlphaZero-style models with MCTS self-play, evaluate against Stockfish, and play your model live.
+      </p>
+      <div class="cta-row fade-up" style="animation-delay:600ms">
+        <a class="btn primary" href="/run">Open run dashboard →</a>
+        <a class="btn ghost" href="/ladder">View ladder</a>
       </div>
-      <div class="status-strip">
-        <span class="pill" id="device-pill">device</span>
-        <span class="pill" id="stage-pill">idle</span>
-        <span class="pill" id="stockfish-pill">stockfish</span>
-      </div>
-    </header>
+    </div>
+  </section>
 
-    <section class="layout">
-      <aside class="panel">
-        <div class="panel-head">
-          <h2 class="panel-title">Pipeline Defaults</h2>
-          <button class="ghost" id="refresh-settings">Refresh</button>
-        </div>
-        <div class="panel-body control-stack">
-          <div class="field">
-            <label for="preset">Preset</label>
-            <select id="preset">
-              <option value="smoke">Smoke</option>
-              <option value="balanced">Balanced</option>
-              <option value="serious">Serious</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="run_name">Run name</label>
-            <input id="run_name" value="cuda-mainline">
-          </div>
-          <div class="two">
-            <div class="field">
-              <label for="pipeline_mode">Pipeline mode</label>
-              <select id="pipeline_mode">
-                <option value="finite">Finite run</option>
-                <option value="infinite">Infinite self-play</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="max_cycles">Max cycles</label>
-              <input id="max_cycles" type="number" min="0" step="1">
-            </div>
-          </div>
-          <div class="two">
-            <div class="field">
-              <label for="device">Device</label>
-              <select id="device">
-                <option value="cuda">CUDA</option>
-                <option value="cpu">CPU</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="amp">Mixed precision</label>
-              <select id="amp">
-                <option value="true">On</option>
-                <option value="false">Off</option>
-              </select>
-            </div>
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="cycle_games">Games / cycle</label>
-              <input id="cycle_games" type="number" min="1" step="10">
-            </div>
-            <div class="field">
-              <label for="warmup_cycles">Warmup cycles</label>
-              <input id="warmup_cycles" type="number" min="0" step="1">
-            </div>
-            <div class="field">
-              <label for="games">Legacy games</label>
-              <input id="games" type="number" min="1" step="10">
-            </div>
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="max_ply">Max ply</label>
-              <input id="max_ply" type="number" min="20" step="10">
-            </div>
-            <div class="field">
-              <label for="seed">Seed</label>
-              <input id="seed" type="number" min="1">
-            </div>
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="mcts_simulations">MCTS sims</label>
-              <input id="mcts_simulations" type="number" min="1" step="8">
-            </div>
-            <div class="field">
-              <label for="interactive_simulations">Play sims</label>
-              <input id="interactive_simulations" type="number" min="1" step="8">
-            </div>
-            <div class="field">
-              <label for="random_opening_moves">Opening ply</label>
-              <input id="random_opening_moves" type="number" min="0" step="1">
-            </div>
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="draw_rate_warning">Draw warn</label>
-              <input id="draw_rate_warning" type="number" min="0" max="1" step=".05">
-            </div>
-            <div class="field">
-              <label for="decisive_sample_weight">Decisive weight</label>
-              <input id="decisive_sample_weight" type="number" min="1" step=".25">
-            </div>
-            <div class="field">
-              <label for="replay_buffer_size">Replay cap</label>
-              <input id="replay_buffer_size" type="number" min="100" step="1000">
-            </div>
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="train_epochs">Epochs</label>
-              <input id="train_epochs" type="number" min="1">
-            </div>
-            <div class="field">
-              <label for="batch_size">Batch</label>
-              <input id="batch_size" type="number" min="16" step="16">
-            </div>
-            <div class="field">
-              <label for="learning_rate">LR</label>
-              <input id="learning_rate" type="number" min="0.00001" step="0.0001">
-            </div>
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="num_blocks">Blocks</label>
-              <input id="num_blocks" type="number" min="1">
-            </div>
-            <div class="field">
-              <label for="channels">Channels</label>
-              <input id="channels" type="number" min="8" step="8">
-            </div>
-            <div class="field">
-              <label for="dropout_p">Dropout</label>
-              <input id="dropout_p" type="number" min="0" max=".5" step=".01">
-            </div>
-          </div>
-          <div class="field">
-            <label for="engine_path">Rust engine path</label>
-            <input id="engine_path">
-          </div>
-          <div class="field">
-            <label for="stockfish_path">Stockfish path</label>
-            <input id="stockfish_path" placeholder="Optional, or set STOCKFISH_PATH">
-          </div>
-          <div class="three">
-            <div class="field">
-              <label for="run_ladder">Ladder</label>
-              <select id="run_ladder">
-                <option value="true">Run</option>
-                <option value="false">Skip</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="ladder_games">Games</label>
-              <input id="ladder_games" type="number" min="2" step="2">
-            </div>
-            <div class="field">
-              <label for="ladder_movetime_ms">Move ms</label>
-              <input id="ladder_movetime_ms" type="number" min="10" step="10">
-            </div>
-          </div>
-          <button class="primary" id="save-settings">Save Defaults</button>
-          <div class="two">
-            <button class="primary" id="start-run">Run Full Pipeline</button>
-            <button class="danger" id="stop-run" disabled>Stop</button>
-          </div>
-        </div>
-      </aside>
+  <section class="surface-grid">
+    <a href="/run" class="surface fade-up" style="animation-delay:760ms">
+      <img class="mark" src="/static/assets/marks/knight.svg">
+      <span class="num">01 · TELEMETRY</span>
+      <h2>Training <span class="grad">run.</span></h2>
+      <p>Live Elo, loss curves, sample throughput, and stage progress. Configure MCTS self-play, start or stop a run, and watch every epoch stream in real time.</p>
+      <span class="arrow"><span class="status-dot" id="run-dot"></span><span id="run-link-label">Open run dashboard →</span></span>
+    </a>
+    <a href="/registry" class="surface fade-up" style="animation-delay:840ms">
+      <img class="mark" src="/static/assets/marks/queen.svg">
+      <span class="num">02 · MODELS</span>
+      <h2>Checkpoint <span class="grad">registry.</span></h2>
+      <p>Browse all checkpoints across every run and cycle. View training metrics, eval scores, and ladder Elo side by side for each saved model.</p>
+      <span class="arrow">Browse checkpoints →</span>
+    </a>
+    <a href="/ladder" class="surface fade-up" style="animation-delay:920ms">
+      <img class="mark" src="/static/assets/marks/rook.svg">
+      <span class="num">03 · COMPETITION</span>
+      <h2>Stockfish <span class="grad">ladder.</span></h2>
+      <p>Head-to-head results against Stockfish. See wins, draws, losses, and Elo estimate with confidence interval. Track progress across cycles.</p>
+      <span class="arrow">See who's winning →</span>
+    </a>
+    <a href="/search" class="surface fade-up" style="animation-delay:1000ms">
+      <img class="mark" src="/static/assets/marks/bishop.svg">
+      <span class="num">04 · INFERENCE</span>
+      <h2>Search <span class="grad">tree.</span></h2>
+      <p>MCTS bloom visualisation. Simulations laid out as a glowing tree, with the top moves ranked by visit count, Q-value, and policy prior.</p>
+      <span class="arrow">Inspect a position →</span>
+    </a>
+    <a href="/play" class="surface fade-up" style="animation-delay:1080ms">
+      <img class="mark" src="/static/assets/marks/pawn.svg">
+      <span class="num">05 · PLAY TEST</span>
+      <h2>Pick an <span class="grad">opponent.</span></h2>
+      <p>Play live against your custom checkpoint, Stockfish at various skill levels, or the Rust minimax baseline. Engine evaluation streams as you move.</p>
+      <span class="arrow">Open the board →</span>
+    </a>
+  </section>
 
-      <section>
-        <div class="panel">
-          <div class="panel-head">
-            <h2 class="panel-title">Training Run</h2>
-            <span class="pill" id="elapsed-pill">00:00</span>
-          </div>
-          <div class="panel-body">
-            <div class="metrics">
-              <div class="metric"><span>Cycle</span><strong id="cycle-now" class="gold">0</strong></div>
-              <div class="metric"><span>Replay samples</span><strong id="replay-samples" class="green">0</strong></div>
-              <div class="metric"><span>Draw rate</span><strong id="draw-rate">-</strong></div>
-              <div class="metric"><span>Avg ply</span><strong id="avg-ply">-</strong></div>
-              <div class="metric"><span>Train loss</span><strong id="train-loss" class="blue">-</strong></div>
-              <div class="metric"><span>Ladder Elo</span><strong id="ladder-elo" class="violet">-</strong></div>
-              <div class="metric"><span>Policy top-1</span><strong id="top1">-</strong></div>
-              <div class="metric"><span>Policy top-5</span><strong id="top5">-</strong></div>
-              <div class="metric"><span>Value MSE</span><strong id="value-mse">-</strong></div>
-              <div class="metric"><span>Latency</span><strong id="latency">-</strong></div>
-            </div>
-            <div class="progress"><div id="progress-bar"></div></div>
-            <div class="progress-readout">
-              <div class="readout"><span>Stage progress</span><strong id="stage-count">-</strong></div>
-              <div class="readout"><span>Rate</span><strong id="stage-rate">-</strong></div>
-              <div class="readout"><span>Last update</span><strong id="last-update">-</strong></div>
-            </div>
-            <div class="stage-row" id="stage-row">
-              <div class="stage" data-stage="generate">Generate</div>
-              <div class="stage" data-stage="filter">Filter</div>
-              <div class="stage" data-stage="train">Train</div>
-              <div class="stage" data-stage="evaluate">Evaluate</div>
-              <div class="stage" data-stage="ladder">Ladder</div>
-              <div class="stage" data-stage="checkpoint">Checkpoint</div>
-            </div>
-            <div class="status-msg" id="status-msg">Ready</div>
-            <svg class="chart" id="run-chart" viewBox="0 0 500 136" preserveAspectRatio="none">
-              <text x="250" y="75" text-anchor="middle" fill="#2a363d" font-size="13">Run milestones will appear here</text>
-            </svg>
-            <div class="run-log" id="run-log">
-              <div class="log-line"><span class="log-time">--:--:--</span><span>Run log will stream here.</span></div>
-            </div>
-          </div>
-        </div>
+  <div class="footer">Chess Resurrected · AlphaZero self-play training</div>
+</main>
 
-        <div class="workbench" style="margin-top:16px">
-          <div class="panel">
-            <div class="panel-head"><h2 class="panel-title">Artifacts</h2></div>
-            <div class="panel-body">
-              <div class="artifact-grid" id="artifacts"></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h2 class="panel-title">Play Test</h2></div>
-            <div class="panel-body">
-              <div class="opponent-bar">
-                <div class="field">
-                  <label for="play-opponent">Opponent model</label>
-                  <select id="play-opponent"></select>
-                </div>
-                <div class="opponent-current" id="opponent-current"><span>Playing against</span> Basic Rust minimax</div>
-              </div>
-              <div id="board-wrap"><div id="board"></div></div>
-              <div class="status-msg" id="play-status">You play White.</div>
-              <div class="play-actions">
-                <button class="primary" id="new-game">New Game</button>
-                <button class="ghost" id="flip-board">Flip</button>
-              </div>
-              <div id="pgn">-</div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </section>
-  </main>
+<script>
+fetch('/training/state').then(r => r.json()).then(s => {
+  const dot = document.getElementById('run-dot');
+  const pill = document.getElementById('status-pill');
+  const label = document.getElementById('run-link-label');
+  const eyebrow = document.getElementById('run-eyebrow');
 
-  <script src="/static/js/jquery.min.js"></script>
-  <script src="/static/js/chess.min.js"></script>
-  <script src="/static/js/chessboard.min.js"></script>
-  <script>
-    const keys = [
-      'run_name','preset','pipeline_mode','engine_path','stockfish_path','device','amp','seed','games','cycle_games','max_cycles','warmup_cycles','max_ply',
-      'mcts_simulations','interactive_simulations','random_opening_moves','temperature','temp_threshold','c_puct','draw_rate_warning','decisive_sample_weight','replay_buffer_size',
-      'train_epochs','batch_size','learning_rate','weight_decay','num_blocks','channels','dropout_p',
-      'run_ladder','ladder_games','ladder_movetime_ms','opponent_elo','fm_target'
-    ];
-    const numeric = new Set(['seed','games','cycle_games','max_cycles','warmup_cycles','max_ply','mcts_simulations','interactive_simulations','random_opening_moves','temperature','temp_threshold','c_puct','draw_rate_warning','decisive_sample_weight','replay_buffer_size','train_epochs','batch_size','learning_rate','weight_decay','num_blocks','channels','dropout_p','ladder_games','ladder_movetime_ms','opponent_elo','fm_target']);
-    const bools = new Set(['amp','run_ladder']);
-    let currentSettings = {};
+  const run = s.device_name || 'cpu';
+  if (s.running) {
+    dot.classList.add('live');
+    pill.textContent = s.stage || 'running';
+    pill.classList.add('live');
+    label.textContent = `Live — ${s.stage || 'running'} →`;
+  } else {
+    pill.textContent = s.stage === 'complete' ? 'complete' : 'idle';
+  }
 
-    function el(id) { return document.getElementById(id); }
-    function fmt(n, digits=3) { return Number.isFinite(n) ? Number(n).toFixed(digits) : '-'; }
-    function elapsed(sec) {
-      sec = Math.max(0, Math.floor(sec || 0));
-      const h = Math.floor(sec / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = sec % 60;
-      return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    }
-    function age(ts) {
-      if (!ts) return '-';
-      const seconds = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-      return seconds < 90 ? `${seconds}s ago` : elapsed(seconds) + ' ago';
-    }
-    function readPayload() {
-      const payload = {};
-      keys.forEach(k => {
-        const node = el(k);
-        if (!node) return;
-        let v = node.value;
-        if (bools.has(k)) v = v === 'true';
-        if (numeric.has(k)) v = Number(v);
-        payload[k] = v;
-      });
-      return payload;
-    }
-    function fillSettings(s) {
-      currentSettings = s;
-      keys.forEach(k => {
-        const node = el(k);
-        if (node && s[k] != null) node.value = String(s[k]);
-      });
-      updatePills({device_name: s.device, cuda_available: s.device === 'cuda', stage: 'idle'});
-    }
-    function loadSettings() {
-      fetch('/training/settings').then(r => r.json()).then(fillSettings);
-    }
-    function saveSettings() {
-      const payload = readPayload();
-      fetch('/training/settings', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-      }).then(loadSettings);
-    }
-    function updatePills(s) {
-      el('device-pill').textContent = s.cuda_available ? `CUDA ${s.device_name || ''}` : `CPU ${s.device_name || ''}`;
-      el('device-pill').className = `pill ${s.cuda_available ? 'green' : 'gold'}`;
-      el('stage-pill').textContent = s.stage || 'idle';
-      el('stage-pill').className = `pill ${s.stage === 'error' ? 'red' : s.running ? 'gold' : 'green'}`;
-      const hasStockfish = Boolean((currentSettings.stockfish_path || '').trim());
-      el('stockfish-pill').textContent = hasStockfish ? 'Stockfish linked' : 'Stockfish not linked';
-      el('stockfish-pill').className = `pill ${hasStockfish ? 'green' : 'red'}`;
-    }
-    function stageIndex(stage) {
-      return ['generate','filter','train','evaluate','ladder','checkpoint','complete'].indexOf(stage);
-    }
-    function applyState(s) {
-      updatePills(s);
-      el('elapsed-pill').textContent = elapsed(s.elapsed_sec);
-      const maxCycles = s.max_cycles || currentSettings.max_cycles || 0;
-      el('cycle-now').textContent = maxCycles ? `${s.cycle || 0}/${maxCycles}` : `${s.cycle || 0}/∞`;
-      el('replay-samples').textContent = (s.replay_samples || s.records_filtered || 0).toLocaleString();
-      el('draw-rate').textContent = Number.isFinite(s.draw_rate) && s.draw_rate > 0 ? `${fmt(s.draw_rate * 100, 1)}%` : '-';
-      el('avg-ply').textContent = s.avg_ply ? fmt(s.avg_ply, 1) : '-';
-      el('train-loss').textContent = s.train_loss ? fmt(s.train_loss, 3) : '-';
-      el('ladder-elo').textContent = s.elo_estimate ? Math.round(s.elo_estimate) : '-';
-      el('top1').textContent = s.policy_top1 ? `${fmt(s.policy_top1 * 100, 1)}%` : '-';
-      el('top5').textContent = s.policy_top5 ? `${fmt(s.policy_top5 * 100, 1)}%` : '-';
-      el('value-mse').textContent = s.value_mse ? fmt(s.value_mse, 4) : '-';
-      el('latency').textContent = s.latency_ms ? `${fmt(s.latency_ms, 2)} ms` : '-';
-      el('progress-bar').style.width = `${Math.max(0, Math.min(1, s.progress || 0)) * 100}%`;
-      el('status-msg').textContent = s.status_msg || 'Ready';
-      const total = s.stage_total || 0;
-      const current = s.stage_current || 0;
-      el('stage-count').textContent = total ? `${current.toLocaleString()} / ${total.toLocaleString()}` : (s.stage_detail || '-');
-      el('stage-rate').textContent = s.stage_rate ? `${fmt(s.stage_rate, 2)} / sec` : '-';
-      el('last-update').textContent = age(s.last_update_at);
-      el('start-run').disabled = Boolean(s.running);
-      el('stop-run').disabled = !s.running;
-
-      const activeIdx = stageIndex(s.stage);
-      document.querySelectorAll('.stage').forEach((el, idx) => {
-        el.classList.toggle('active', idx === activeIdx);
-        el.classList.toggle('done', activeIdx > idx || s.stage === 'complete');
-      });
-      renderArtifacts(s.artifacts || {});
-      drawHistory(s.history || []);
-      renderLog(s.log || []);
-    }
-    function renderArtifacts(artifacts) {
-      const entries = Object.entries(artifacts).filter(([k]) => k !== 'run_dir');
-      el('artifacts').innerHTML = entries.length ? entries.map(([k, v]) => `
-        <div class="artifact"><span>${k.replaceAll('_',' ')}</span><code title="${v}">${v}</code></div>
-      `).join('') : '<div class="subtle">Artifacts appear after a run starts.</div>';
-    }
-    function drawHistory(history) {
-      const svg = el('run-chart');
-      if (!history.length) return;
-      const w = 500, h = 136, pad = 18;
-      const points = history.map((p, i) => [pad + i * ((w - pad * 2) / Math.max(history.length - 1, 1)), h - pad - (i % 2) * 26]);
-      svg.innerHTML = `
-        <polyline points="${points.map(p => p.join(',')).join(' ')}" fill="none" stroke="#61a5ff" stroke-width="2"/>
-        ${points.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#d8b45d"/><text x="${p[0]}" y="${p[1]-11}" fill="#8d9b9a" font-size="10" text-anchor="middle">${history[i][0]}</text>`).join('')}
-      `;
-    }
-    function renderLog(log) {
-      const box = el('run-log');
-      if (!log.length) {
-        box.innerHTML = '<div class="log-line"><span class="log-time">--:--:--</span><span>Run log will stream here.</span></div>';
-        return;
-      }
-      box.innerHTML = log.slice(-80).map(row => `<div class="log-line"><span class="log-time">${row.t || ''}</span><span>${row.message || ''}</span></div>`).join('');
-      box.scrollTop = box.scrollHeight;
-    }
-    el('save-settings').addEventListener('click', saveSettings);
-    el('refresh-settings').addEventListener('click', loadSettings);
-    el('preset').addEventListener('change', () => {
-      fetch('/training/settings', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({preset: el('preset').value})
-      }).then(loadSettings);
-    });
-    el('start-run').addEventListener('click', () => {
-      saveSettings();
-      setTimeout(() => fetch('/training/start', {method: 'POST'}), 150);
-    });
-    el('stop-run').addEventListener('click', () => fetch('/training/stop', {method: 'POST'}));
-    fetch('/training/state').then(r => r.json()).then(applyState);
-    (function stream() {
-      const es = new EventSource('/training/stream');
-      es.onmessage = e => { try { applyState(JSON.parse(e.data)); } catch (_) {} };
-      es.onerror = () => { es.close(); setTimeout(stream, 2500); };
-    })();
-    loadSettings();
-
-    const game = new Chess();
-    let thinking = false;
-    let playOpponent = 'minimax';
-    let playOpponentLabel = 'Basic Rust minimax';
-    function setPlay(msg) { el('play-status').textContent = msg; }
-    function updatePgn() { el('pgn').textContent = game.pgn({max_width: 64, newline_char: '\n'}) || '-'; }
-    function setOpponentLabel(label) {
-      playOpponentLabel = label || playOpponentLabel;
-      el('opponent-current').innerHTML = `<span>Playing against</span> ${playOpponentLabel}`;
-    }
-    function loadOpponents() {
-      fetch('/play/opponents').then(r => r.json()).then(data => {
-        const select = el('play-opponent');
-        playOpponent = data.current || playOpponent;
-        playOpponentLabel = data.current_label || playOpponentLabel;
-        select.innerHTML = data.opponents.map(o => {
-          const stockfishBlocked = o.id.startsWith('stockfish-') && !data.stockfish_available;
-          const customBlocked = o.id === 'custom' && !data.custom_available;
-          const blocked = stockfishBlocked || customBlocked;
-          const suffix = stockfishBlocked ? ' (Stockfish not found)' : customBlocked ? ' (no checkpoint)' : '';
-          return `<option value="${o.id}" ${o.id === playOpponent ? 'selected' : ''} ${blocked ? 'disabled' : ''}>${o.label}${suffix}</option>`;
-        }).join('');
-        setOpponentLabel(playOpponentLabel);
-      });
-    }
-    function changeOpponent(id) {
-      fetch('/play/opponent', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({opponent: id})
-      }).then(r => r.json()).then(data => {
-        if (!data.ok) {
-          setPlay(data.error || 'Could not switch opponent.');
-          return;
-        }
-        playOpponent = data.current;
-        setOpponentLabel(data.current_label);
-        game.reset();
-        board.start();
-        updatePgn();
-        setPlay(`New game. You play White against ${data.current_label}.`);
-      }).catch(() => setPlay('Could not switch opponent.'));
-    }
-    function gameOver() {
-      if (game.in_checkmate()) { setPlay((game.turn() === 'w' ? 'Black' : 'White') + ' wins by checkmate.'); return true; }
-      if (game.in_draw()) { setPlay('Draw.'); return true; }
-      return false;
-    }
-    function askEngine() {
-      if (gameOver()) return;
-      thinking = true;
-      setPlay('Engine thinking');
-      fetch('/move', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({fen: game.fen(), opponent: playOpponent})
-      }).then(r => r.json()).then(data => {
-        thinking = false;
-        if (data.error) {
-          setPlay(data.error);
-          return;
-        }
-        if (!data.engine_move) { setPlay('Game over.'); return; }
-        const u = data.engine_move;
-        game.move({from: u.slice(0,2), to: u.slice(2,4), promotion: u[4]});
-        board.position(game.fen());
-        updatePgn();
-        if (data.opponent_label) setOpponentLabel(data.opponent_label);
-        if (!gameOver()) setPlay(`${playOpponentLabel} played ${u}. Your move.`);
-      }).catch(() => { thinking = false; setPlay('Engine unavailable.'); });
-    }
-    function onDragStart(_source, piece) {
-      if (thinking || game.game_over() || game.turn() === 'b' || piece[0] === 'b') return false;
-    }
-    function onDrop(source, target, piece) {
-      const move = {from: source, to: target};
-      if (piece[1].toLowerCase() === 'p' && (target[1] === '8' || target[1] === '1')) move.promotion = 'q';
-      if (game.move(move) === null) return 'snapback';
-      board.position(game.fen());
-      updatePgn();
-      askEngine();
-    }
-    const board = Chessboard('board', {
-      draggable: true,
-      position: 'start',
-      pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png',
-      onDragStart,
-      onDrop,
-      onSnapEnd: () => board.position(game.fen())
-    });
-    el('new-game').addEventListener('click', () => { game.reset(); board.start(); updatePgn(); setPlay(`You play White against ${playOpponentLabel}.`); });
-    el('flip-board').addEventListener('click', () => board.flip());
-    el('play-opponent').addEventListener('change', e => changeOpponent(e.target.value));
-    window.addEventListener('resize', () => board.resize());
-    loadOpponents();
-  </script>
+  fetch('/training/settings').then(r => r.json()).then(cfg => {
+    const runName = cfg.run_name || 'run';
+    eyebrow.textContent = `Chess Resurrected · ${runName} · ${run.toUpperCase()}`;
+  });
+});
+</script>
 </body>
 </html>

@@ -1,0 +1,197 @@
+/* Chess Resurrected — Colors & Type (v2 · Gemini-marketing direction)
+ * Bold gradient identity (azure → magenta → amber), oversized Geist type,
+ * cinematic motion. Generous whitespace, expressive accents.
+ * The original control-room values are preserved at the bottom as legacy aliases.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap");
+
+:root {
+  /* ---- Gradient identity ---- */
+  --grad-azure:   #4F86FF;
+  --grad-magenta: #FF5BA8;
+  --grad-amber:   #FFB347;
+  --grad-violet:  #9B6CFF;
+  --grad-mint:    #5BE3C2;
+
+  /* The hero gradient — used on big type, hero strokes, chart highlights */
+  --grad-hero: linear-gradient(
+    100deg,
+    var(--grad-azure) 0%,
+    var(--grad-violet) 30%,
+    var(--grad-magenta) 60%,
+    var(--grad-amber) 100%
+  );
+  --grad-hero-soft: linear-gradient(
+    100deg,
+    rgba(79,134,255,.18) 0%,
+    rgba(155,108,255,.16) 30%,
+    rgba(255,91,168,.14) 60%,
+    rgba(255,179,71,.16) 100%
+  );
+
+  /* ---- Surfaces (deep ink with a faint blue cast — lets gradients glow) ---- */
+  --bg:        #07091A;   /* page */
+  --bg-2:      #0B0E25;   /* secondary band */
+  --panel:     #11142E;   /* card surface */
+  --panel-2:   #181D3D;   /* raised */
+  --panel-3:   #232A52;   /* hover / divider lift */
+  --field-bg:  #0C0F26;
+  --line:      rgba(180,196,255,.10);
+  --line-strong: rgba(180,196,255,.20);
+  --ink:       #07091A;
+
+  /* ---- Text ---- */
+  --text:      #F2F3FF;
+  --text-2:    #C9CCEA;
+  --muted:     #7A80AE;
+  --dim:       #4F557C;
+
+  /* ---- Semantic accents (kept compatible w/ legacy) ---- */
+  --gold:    var(--grad-amber);
+  --blue:    var(--grad-azure);
+  --green:   #4ADE80;
+  --red:     #FF5C5C;
+  --violet:  var(--grad-violet);
+  --magenta: var(--grad-magenta);
+  --mint:    var(--grad-mint);
+
+  /* ---- Type ---- */
+  --font-sans: "Geist", "Inter", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", Consolas, monospace;
+  --font-display: "Geist", "Inter", system-ui, sans-serif;
+
+  /* Oversized display scale (Gemini-marketing) */
+  --fs-hero:    clamp(3.5rem, 9vw, 8rem);     /* page-opening monolith */
+  --fs-display: clamp(2.5rem, 5vw, 4.5rem);   /* section opener */
+  --fs-h1:      clamp(1.75rem, 3vw, 2.75rem);
+  --fs-h2:      clamp(1.25rem, 2vw, 1.6rem);
+  --fs-h3:      1.05rem;
+  --fs-body:    1rem;
+  --fs-small:   .875rem;
+  --fs-label:   .72rem;     /* uppercase tracked */
+  --fs-mono:    .82rem;
+  --fs-mega:    clamp(2rem, 5vw, 3.5rem);   /* metric numerics */
+
+  --tracking-label: .12em;   /* wider than v1 — DeepMind-y */
+  --tracking-display: -.02em;
+
+  /* ---- Spacing ---- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px;  --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px;  --s-8: 72px;  --s-9: 120px;
+
+  /* ---- Radii (more generous now) ---- */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  /* ---- Shadows (deep, colored ambient) ---- */
+  --shadow-card: 0 30px 80px -30px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.04) inset;
+  --shadow-glow-azure:   0 0 80px -20px rgba(79,134,255,.55);
+  --shadow-glow-magenta: 0 0 80px -20px rgba(255,91,168,.45);
+
+  /* ---- Page wash: animated aurora (very subtle) ---- */
+  --bg-aurora:
+    radial-gradient(60% 40% at 15% 8%,  rgba(79,134,255,.18), transparent 60%),
+    radial-gradient(50% 35% at 85% 18%, rgba(255,91,168,.14), transparent 60%),
+    radial-gradient(60% 50% at 50% 100%, rgba(255,179,71,.10), transparent 60%),
+    var(--bg);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in-out: cubic-bezier(.65,0,.35,1);
+  --dur-fast: 180ms;
+  --dur-base: 320ms;
+  --dur-slow: 600ms;
+  --dur-cinematic: 1200ms;
+
+  /* ---- Legacy aliases (Control Room v1 still works) ---- */
+  --raised-wash: var(--panel-2);
+  --panel-wash:  var(--panel);
+  --field-wash:  var(--field-bg);
+  --gold-wash:   rgba(255,179,71,.10);
+  --gold-tint:   rgba(255,179,71,.40);
+  --gold-strong: rgba(255,179,71,.55);
+  --green-tint:  rgba(74,222,128,.35);
+  --red-tint:    rgba(255,92,92,.35);
+  --red-wash:    rgba(255,92,92,.14);
+  --shadow-deep: var(--shadow-card);
+  --bg-control-room: var(--bg-aurora);
+  --progress-gradient: var(--grad-hero);
+  --radius-sm: var(--r-md);
+  --radius-pill: var(--r-pill);
+  --control-h: 44px;
+  --input-h: 42px;
+  --pill-h: 30px;
+  --fs-pill: var(--fs-label);
+  --fs-status: var(--fs-small);
+  --fs-panel: var(--fs-h3);
+  --fs-readout: var(--fs-label);
+  --fs-meta: var(--fs-label);
+  --fs-pgn: var(--fs-mono);
+  --fw-heavy: 700;
+  --square-light: #F2EAD3;
+  --square-dark: #2D2A4A;
+  --square-border: var(--line-strong);
+  --tracking-label-legacy: var(--tracking-label);
+}
+
+/* ---- Body & display defaults ---- */
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  background: var(--bg-aurora);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.02;
+  margin: 0;
+}
+
+.hero {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  letter-spacing: -.04em;
+  line-height: .95;
+  background: var(--grad-hero);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.label {
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+code, .mono { font-family: var(--font-mono); font-size: var(--fs-mono); }
+
+/* Gradient utility */
+.grad-text {
+  background: var(--grad-hero);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.grad-stroke {
+  background: var(--grad-hero);
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

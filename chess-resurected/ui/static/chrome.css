@@ -1,0 +1,142 @@
+/* Shared chrome & helpers for the new product surface (v2 · Gemini-marketing).
+   Loaded after colors_and_type.css. */
+
+/* ---- top bar ---- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; gap:var(--s-6);
+  padding:var(--s-4) var(--s-6);
+  background:rgba(7,9,26,.72);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-bottom:1px solid var(--line);
+}
+.topbar .logo{ display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:-.01em;}
+.topbar .logo img{height:28px; width:auto;}
+.topbar nav{display:flex; gap:var(--s-2); align-items:center;}
+.topbar nav a{
+  font-size:.92rem; padding:8px 14px; border-radius:var(--r-pill);
+  color:var(--text-2); text-decoration:none; font-weight:500;
+  transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.topbar nav a:hover{ background:var(--panel-2); color:var(--text);}
+.topbar nav a.active{ background:var(--panel-3); color:var(--text);}
+.topbar .right{margin-left:auto; display:flex; align-items:center; gap:var(--s-3);}
+.topbar .avatar{
+  width:34px; height:34px; border-radius:var(--r-pill);
+  background:var(--grad-hero); display:grid; place-items:center;
+  color:#0c0f26; font-weight:700; font-size:.8rem;
+}
+
+/* ---- container ---- */
+.page{ max-width:1440px; margin:0 auto; padding:var(--s-7) var(--s-6) 120px;}
+.page-header{ margin-bottom:var(--s-7);}
+.page-header .crumb{
+  font-size:.72rem; text-transform:uppercase; letter-spacing:.12em;
+  color:var(--muted); margin-bottom:14px; font-weight:500;
+}
+.page-header h1{
+  font-size:clamp(2.4rem,5vw,4rem);
+  font-weight:700; letter-spacing:-.03em; line-height:1;
+  margin:0;
+}
+.page-header h1 .accent{
+  background:var(--grad-hero); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.page-header .meta{
+  margin-top:var(--s-5);
+  display:flex; gap:var(--s-5); flex-wrap:wrap; color:var(--text-2);
+  font-size:.9rem;
+}
+.page-header .meta b{ color:var(--text); font-weight:600;}
+.page-header .meta .dot{ color:var(--dim);}
+
+/* ---- card ---- */
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-lg); padding:var(--s-5);
+  position:relative; overflow:hidden;
+}
+.card.glow::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:var(--grad-hero-soft); opacity:.5; mix-blend-mode:screen;
+}
+.card .card-label{
+  font-size:.7rem; text-transform:uppercase; letter-spacing:.12em;
+  color:var(--muted); font-weight:500; margin-bottom:var(--s-3);
+}
+.card .card-value{
+  font-size:var(--fs-mega); font-weight:700; letter-spacing:-.02em; line-height:1;
+}
+.card .card-sub{ margin-top:8px; color:var(--text-2); font-size:.85rem;}
+
+/* ---- pill / chip ---- */
+.pill{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px; border-radius:var(--r-pill);
+  font-size:.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+  border:1px solid var(--line-strong);
+  background:var(--panel-2); color:var(--text-2);
+}
+.pill.live{ color:var(--green); border-color:rgba(74,222,128,.4);}
+.pill.live::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.pill.warn{ color:var(--grad-amber); border-color:rgba(255,179,71,.4);}
+.pill.gradient{ background:var(--grad-hero); color:#0c0f26; border-color:transparent;}
+
+/* ---- button ---- */
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  height:42px; padding:0 18px; border-radius:var(--r-pill);
+  font-family:var(--font-sans); font-weight:600; font-size:.92rem;
+  border:1px solid var(--line-strong); background:var(--panel-2); color:var(--text);
+  cursor:pointer; transition:all var(--dur-fast) var(--ease-out);
+}
+.btn:hover{ background:var(--panel-3); transform:translateY(-1px);}
+.btn:active{ transform:translateY(0);}
+.btn.primary{
+  background:var(--grad-hero); color:#0c0f26; border-color:transparent;
+  box-shadow:var(--shadow-glow-azure);
+}
+.btn.primary:hover{ box-shadow:var(--shadow-glow-magenta), var(--shadow-glow-azure);}
+.btn.ghost{ background:transparent;}
+
+/* ---- table ---- */
+table.t{ width:100%; border-collapse:collapse;}
+table.t th{
+  text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.12em;
+  color:var(--muted); font-weight:500; padding:14px 16px;
+  border-bottom:1px solid var(--line);
+}
+table.t td{
+  padding:18px 16px; border-bottom:1px solid var(--line);
+  font-size:.94rem; color:var(--text);
+}
+table.t tr{ transition:background var(--dur-fast);}
+table.t tbody tr:hover{ background:var(--panel-2);}
+
+/* ---- cinematic entry ---- */
+.fade-up{ opacity:0; transform:translateY(20px); animation:fadeUp 800ms var(--ease-out) forwards;}
+.fade-in{ opacity:0; animation:fadeIn 800ms var(--ease-out) forwards;}
+@keyframes fadeUp{ to{opacity:1; transform:none;} }
+@keyframes fadeIn{ to{opacity:1;} }
+
+/* ---- aurora bg pulse ---- */
+@keyframes auroraPan{
+  0%{transform:translate(0,0) rotate(0);} 50%{transform:translate(2%,-1%) rotate(.5deg);} 100%{transform:translate(0,0) rotate(0);}
+}
+
+/* page-load curtain */
+.curtain{
+  position:fixed; inset:0; z-index:200; background:var(--bg);
+  display:grid; place-items:center; pointer-events:none;
+  animation:curtainOut 1100ms var(--ease-out) forwards;
+}
+.curtain .mark{
+  width:120px; height:120px; opacity:.95;
+  animation:markIn 700ms var(--ease-out) both;
+}
+@keyframes curtainOut{ 0%,30%{opacity:1;} 100%{opacity:0; visibility:hidden;} }
+@keyframes markIn{ from{opacity:0; transform:scale(.7);} to{opacity:1; transform:scale(1);} }
+
+/* number ticker */
+.ticker{ font-variant-numeric:tabular-nums;}

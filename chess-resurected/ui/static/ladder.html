@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ladder · Chess Resurrected</title>
+<link rel="stylesheet" href="/static/colors_and_type.css">
+<link rel="stylesheet" href="/static/chrome.css">
+<link rel="stylesheet" href="/static/light.css">
+<script src="/static/theme.js"></script>
+<style>
+  .ladder-hero{ display:grid; grid-template-columns:1fr 340px; gap:32px; margin-bottom:40px; align-items:end;}
+  @media(max-width:800px){ .ladder-hero{ grid-template-columns:1fr;} }
+
+  .leaders{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px;}
+  @media(max-width:700px){ .leaders{ grid-template-columns:1fr;} }
+
+  .leader{ position:relative; padding:22px 24px; border-radius:var(--r-lg); overflow:hidden; background:var(--panel); border:1px solid var(--line);}
+  .leader.gold{ border-color:transparent;}
+  .leader.gold::before{ content:""; position:absolute; inset:0; background:var(--grad-hero); opacity:.14;}
+  .leader.gold::after{
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:var(--grad-hero);
+    -webkit-mask:linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+  }
+  .leader .rank{ font-size:4rem; font-weight:700; line-height:1; letter-spacing:-.04em; background:var(--grad-hero); -webkit-background-clip:text; background-clip:text; color:transparent; position:relative; z-index:1;}
+  .leader.silver .rank, .leader.bronze .rank{ background:none; -webkit-text-fill-color:var(--text-2); color:var(--text-2);}
+  .leader .nm{ font-size:1.2rem; font-weight:700; margin-top:8px; letter-spacing:-.01em; position:relative; z-index:1;}
+  .leader .elo{ font-family:var(--font-mono); color:var(--text-2); font-size:.9rem; margin-top:4px; position:relative; z-index:1;}
+  .leader .wld{ font-family:var(--font-mono); color:var(--muted); font-size:.8rem; margin-top:4px; position:relative; z-index:1;}
+  .leader .change{ display:inline-block; margin-top:12px; font-family:var(--font-mono); font-size:.8rem; position:relative; z-index:1;}
+  .leader .change.up{ color:var(--green);} .leader .change.dn{ color:var(--red);} .leader .change.na{ color:var(--muted);}
+  .leader .mark{ position:absolute; right:16px; top:16px; width:44px; opacity:.8; z-index:1;}
+
+  .elo-bar-wrap{ background:var(--panel-2); border:1px solid var(--line); border-radius:var(--r-md); padding:14px 18px; margin-bottom:24px;}
+  .elo-bar-label{ font-size:.7rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:500; margin-bottom:10px;}
+  .elo-bar{ height:8px; border-radius:4px; background:var(--panel-3); overflow:hidden; position:relative;}
+  .elo-fill{ height:100%; background:var(--grad-hero); border-radius:4px; transition:width .8s var(--ease-out);}
+  .elo-markers{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.68rem; color:var(--muted); margin-top:5px;}
+
+  .meta-stat{ display:flex; align-items:baseline; gap:8px; color:var(--text-2); font-size:.92rem;}
+  .meta-stat b{ color:var(--text); font-size:1.4rem; font-weight:700; letter-spacing:-.01em;}
+
+  .ladder-table .nm{ font-weight:600;}
+  .ladder-table .run{ font-family:var(--font-mono); font-size:.76rem; color:var(--muted);}
+  .ladder-table .elo-num{ font-family:var(--font-mono); font-size:1rem; font-weight:600;}
+  .delta{ font-family:var(--font-mono); font-size:.85rem;}
+  .delta.up{ color:var(--green);} .delta.dn{ color:var(--red);} .delta.flat{ color:var(--muted);}
+
+  .wld-bar{ display:flex; height:5px; border-radius:3px; overflow:hidden; margin-top:4px; gap:1px;}
+  .wld-bar .w{ background:var(--green);}
+  .wld-bar .d{ background:var(--muted);}
+  .wld-bar .l{ background:var(--red);}
+
+  .empty-state{ padding:40px; text-align:center; color:var(--dim); font-size:.92rem;}
+</style>
+</head>
+<body>
+
+<div class="curtain"><img class="mark" src="/static/assets/marks/rook.svg" alt=""></div>
+
+<header class="topbar">
+  <div class="logo"><img src="/static/assets/marks/wordmark.svg" alt="Chess Resurrected" style="height:24px;width:auto;display:block;"></div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/run">Run</a>
+    <a href="/registry">Registry</a>
+    <a href="/ladder" class="active">Ladder</a>
+    <a href="/search">Search</a>
+    <a href="/play">Play</a>
+  </nav>
+  <div class="right">
+    <span class="pill" id="status-pill">Loading…</span>
+    <div class="avatar">CR</div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="ladder-hero fade-up" style="animation-delay:200ms">
+    <div>
+      <div class="crumb" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:12px; font-weight:500;">Stockfish ladder results</div>
+      <h1 style="font-size:clamp(2.4rem,5vw,4rem); font-weight:700; letter-spacing:-.03em; margin:0;">Who's<br><span class="grad-text">winning today?</span></h1>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;" id="hero-stats">
+      <div class="meta-stat"><b id="hs-elo">—</b> best Elo estimate</div>
+      <div class="meta-stat"><b id="hs-games">—</b> games played</div>
+      <div class="meta-stat"><b id="hs-score">—</b> win score</div>
+    </div>
+  </section>
+
+  <!-- Elo progress bar towards FM target -->
+  <div class="elo-bar-wrap fade-up" style="animation-delay:340ms">
+    <div class="elo-bar-label">Elo estimate vs target (<span id="fm-target">2300</span> FM level)</div>
+    <div class="elo-bar"><div class="elo-fill" id="elo-fill" style="width:0%"></div></div>
+    <div class="elo-markers">
+      <span>0</span><span id="fm-mid">1150</span><span id="fm-target-2">2300</span>
+    </div>
+  </div>
+
+  <!-- Podium -->
+  <section class="leaders fade-up" style="animation-delay:440ms" id="podium">
+    <div class="leader fade-up" style="animation-delay:440ms">
+      <div class="rank">—</div>
+      <div class="nm" style="color:var(--dim)">No ladder data yet</div>
+      <div class="elo">Run a training cycle with the ladder enabled</div>
+    </div>
+  </section>
+
+  <!-- Table of all ladder runs -->
+  <div class="card fade-up" style="animation-delay:600ms; padding:0;" id="table-card">
+    <div class="empty-state" id="table-empty">Ladder history will appear here after runs complete.</div>
+    <table class="t ladder-table" id="ladder-table" style="display:none;">
+      <thead>
+        <tr>
+          <th style="width:50px">#</th>
+          <th>Run · cycle</th>
+          <th style="text-align:right">Elo</th>
+          <th style="text-align:right">CI 95%</th>
+          <th style="text-align:right">Score</th>
+          <th style="text-align:right">W / D / L</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody id="ladder-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+function fmt(n, d=1) { return Number.isFinite(+n) ? (+n).toFixed(d) : '—'; }
+
+const MARKS = ['king','queen','bishop','rook','knight','pawn'];
+
+function populateLadder(data) {
+  const pill = document.getElementById('status-pill');
+  if (!data || !data.runs || !data.runs.length) {
+    pill.textContent = 'No data';
+    return;
+  }
+
+  // Find best run by Elo
+  const allRuns = data.runs;
+  allRuns.sort((a, b) => (b.elo_estimate || 0) - (a.elo_estimate || 0));
+  const best = allRuns[0];
+
+  pill.textContent = `${allRuns.length} result${allRuns.length !== 1 ? 's' : ''}`;
+  pill.classList.add('live');
+
+  // Hero stats
+  document.getElementById('hs-elo').textContent = best.elo_estimate ? Math.round(best.elo_estimate) : '—';
+  document.getElementById('hs-games').textContent = allRuns.reduce((s, r) => s + (r.games || 0), 0);
+  document.getElementById('hs-score').textContent = best.score != null ? (best.score * 100).toFixed(1) + '%' : '—';
+
+  // Elo bar
+  const fmTarget = best.fm_target || 2300;
+  document.getElementById('fm-target').textContent = fmTarget;
+  document.getElementById('fm-target-2').textContent = fmTarget;
+  document.getElementById('fm-mid').textContent = Math.round(fmTarget / 2);
+  const eloPct = Math.max(0, Math.min(100, ((best.elo_estimate || 0) / fmTarget) * 100));
+  setTimeout(() => document.getElementById('elo-fill').style.width = eloPct.toFixed(1) + '%', 800);
+
+  // Podium
+  const podium = document.getElementById('podium');
+  podium.innerHTML = '';
+  const top3 = allRuns.slice(0, 3);
+  const classes = ['gold', 'silver', 'bronze'];
+  top3.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = `leader ${classes[i]} fade-up`;
+    div.style.animationDelay = (440 + i * 80) + 'ms';
+    const mark = MARKS[i % MARKS.length];
+    const wld = `${r.wins||0}W / ${r.draws||0}D / ${r.losses||0}L`;
+    const statusColor = r.status === 'fm_level' ? 'var(--green)' : 'var(--muted)';
+    div.innerHTML = `
+      <img class="mark" src="/static/assets/marks/${mark}.svg">
+      <div class="rank">${String(i+1).padStart(2,'0')}</div>
+      <div class="nm">${r.run || r.name || 'Run'} ${r.cycle ? `· cycle ${r.cycle}` : ''}</div>
+      <div class="elo">${Math.round(r.elo_estimate||0)} Elo · vs Stockfish ${r.opponent_elo||2300}</div>
+      <div class="wld">${wld}</div>
+      <div class="change na">${r.status ? r.status.replaceAll('_',' ') : '—'}</div>
+    `;
+    podium.appendChild(div);
+  });
+
+  // Table
+  if (allRuns.length > 0) {
+    document.getElementById('table-empty').style.display = 'none';
+    document.getElementById('ladder-table').style.display = '';
+    const tbody = document.getElementById('ladder-body');
+    tbody.innerHTML = '';
+    allRuns.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      const elo = Math.round(r.elo_estimate || 0);
+      const ci = r.elo_ci95_low != null
+        ? `[${Math.round(r.elo_ci95_low)}, ${Math.round(r.elo_ci95_high)}]`
+        : '—';
+      const score = r.score != null ? (r.score*100).toFixed(1)+'%' : '—';
+      const wld = `${r.wins||0} / ${r.draws||0} / ${r.losses||0}`;
+      const total = (r.wins||0) + (r.draws||0) + (r.losses||0) || 1;
+      const wPct = ((r.wins||0)/total*100).toFixed(0);
+      const dPct = ((r.draws||0)/total*100).toFixed(0);
+      const lPct = ((r.losses||0)/total*100).toFixed(0);
+      const statusLabel = r.status ? r.status.replaceAll('_',' ') : '—';
+      tr.innerHTML = `
+        <td style="font-family:var(--font-mono); color:var(--muted)">${String(i+1).padStart(2,'0')}</td>
+        <td><span class="nm">${r.run||r.name||'run'}</span>${r.cycle ? ` <span class="run">cycle ${r.cycle}</span>` : ''}</td>
+        <td style="text-align:right"><span class="elo-num">${elo}</span></td>
+        <td style="text-align:right; font-family:var(--font-mono); font-size:.82rem; color:var(--muted)">${ci}</td>
+        <td style="text-align:right; font-family:var(--font-mono)">${score}</td>
+        <td style="text-align:right; font-family:var(--font-mono); font-size:.85rem">${wld}
+          <div class="wld-bar"><div class="w" style="flex:${wPct}"></div><div class="d" style="flex:${dPct}"></div><div class="l" style="flex:${lPct}"></div></div>
+        </td>
+        <td><span class="pill" style="font-size:.68rem">${statusLabel}</span></td>
+      `;
+      tr.style.opacity = '0'; tr.style.transform = 'translateY(8px)';
+      tr.style.transition = 'all 400ms cubic-bezier(.2,.8,.2,1)';
+      tbody.appendChild(tr);
+      setTimeout(() => { tr.style.opacity = '1'; tr.style.transform = 'none'; }, 700 + i * 50);
+    });
+  }
+}
+
+fetch('/api/ladder').then(r => r.json()).then(populateLadder).catch(() => {
+  document.getElementById('status-pill').textContent = 'No data';
+});
+</script>
+</body>
+</html>

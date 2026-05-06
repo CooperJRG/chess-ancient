@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registry · Chess Resurrected</title>
+<link rel="stylesheet" href="/static/colors_and_type.css">
+<link rel="stylesheet" href="/static/chrome.css">
+<link rel="stylesheet" href="/static/light.css">
+<script src="/static/theme.js"></script>
+<style>
+  .registry-grid{ display:grid; grid-template-columns:1fr 340px; gap:24px; align-items:start;}
+  @media(max-width:900px){ .registry-grid{ grid-template-columns:1fr;} }
+
+  .ckpt-list{ display:flex; flex-direction:column; gap:0;}
+  .ckpt{
+    display:grid; grid-template-columns:auto 1fr auto auto; gap:14px; align-items:center;
+    padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer;
+    transition:background 180ms;
+  }
+  .ckpt:last-child{ border:0;}
+  .ckpt:hover{ background:var(--panel-2);}
+  .ckpt.selected{ background:var(--panel-2);}
+  .ckpt .step{ font-family:var(--font-mono); color:var(--muted); font-size:.82rem; min-width:80px;}
+  .ckpt .name{ font-weight:600; font-size:.92rem;}
+  .ckpt .sub{ font-size:.76rem; color:var(--muted); font-family:var(--font-mono); margin-top:2px;}
+  .ckpt .loss{ font-family:var(--font-mono); font-size:.85rem;}
+  .ckpt .loss.good{ color:var(--green);}
+
+  .compare-table{ width:100%; border-collapse:collapse;}
+  .compare-table td{ padding:9px 0; font-size:.88rem; border-bottom:1px solid var(--line);}
+  .compare-table td:first-child{ color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; font-weight:500;}
+  .compare-table td:nth-child(2){ font-family:var(--font-mono); text-align:right; color:var(--text);}
+
+  .run-section{ margin-bottom:8px;}
+  .run-header{
+    padding:10px 16px; background:var(--panel-2); border-radius:var(--r-md);
+    font-weight:600; font-size:.88rem; display:flex; align-items:center; gap:8px;
+    margin-bottom:4px; cursor:pointer;
+  }
+  .run-header img{ width:18px; height:18px; opacity:.7;}
+
+  .filter-bar{ display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap;}
+  .search-input{
+    height:42px; padding:0 16px; border-radius:var(--r-pill);
+    background:var(--field-bg); border:1px solid var(--line); color:var(--text);
+    font:0.92rem var(--font-sans); min-width:240px;
+  }
+  .search-input:focus{ outline:none; border-color:var(--grad-azure); box-shadow:0 0 0 3px rgba(79,134,255,.12);}
+  .search-input::placeholder{ color:var(--dim);}
+
+  .empty-state{ padding:40px; text-align:center; color:var(--dim); font-size:.92rem;}
+</style>
+</head>
+<body>
+
+<div class="curtain"><img class="mark" src="/static/assets/marks/queen.svg" alt=""></div>
+
+<header class="topbar">
+  <div class="logo"><img src="/static/assets/marks/wordmark.svg" alt="Chess Resurrected" style="height:24px;width:auto;display:block;"></div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/run">Run</a>
+    <a href="/registry" class="active">Registry</a>
+    <a href="/ladder">Ladder</a>
+    <a href="/search">Search</a>
+    <a href="/play">Play</a>
+  </nav>
+  <div class="right">
+    <span class="pill" id="count-pill">Loading…</span>
+    <button class="btn ghost" id="refresh-btn">Refresh</button>
+    <div class="avatar">CR</div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="page-header fade-up" style="animation-delay:200ms">
+    <div class="crumb">Models</div>
+    <h1>Checkpoint <span class="accent">registry</span></h1>
+    <div class="meta">
+      <span><b id="total-ckpts">—</b> checkpoints</span>
+      <span class="dot">·</span>
+      <span><b id="total-runs">—</b> runs</span>
+    </div>
+  </section>
+
+  <div class="filter-bar fade-up" style="animation-delay:320ms">
+    <input class="search-input" id="search-input" placeholder="Search by run name or cycle…">
+    <span class="pill" style="margin-left:auto" id="filter-count"></span>
+  </div>
+
+  <section class="registry-grid fade-up" style="animation-delay:440ms">
+    <!-- Checkpoint list -->
+    <div class="card" style="padding:0; overflow:hidden;" id="ckpt-container">
+      <div class="empty-state" id="ckpt-empty">Loading checkpoints…</div>
+      <div id="ckpt-list-wrap"></div>
+    </div>
+
+    <!-- Detail / compare panel -->
+    <aside>
+      <div class="card glow" id="detail-card">
+        <div class="card-label" style="margin-bottom:14px">Checkpoint detail</div>
+        <div id="detail-empty" style="color:var(--dim); font-size:.88rem; font-style:italic;">Select a checkpoint to see metrics.</div>
+        <div id="detail-content" style="display:none;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+            <img id="detail-mark" src="/static/assets/marks/king.svg" style="width:32px; opacity:.85;">
+            <div>
+              <div style="font-weight:700; font-size:1rem;" id="detail-name">—</div>
+              <div style="font-size:.78rem; color:var(--muted); font-family:var(--font-mono); margin-top:2px;" id="detail-sub">—</div>
+            </div>
+            <span class="pill" style="margin-left:auto;" id="detail-type-pill">—</span>
+          </div>
+          <table class="compare-table" id="detail-table"></table>
+          <div style="display:flex; gap:8px; margin-top:18px;">
+            <a class="btn primary" href="/play" style="flex:1; text-align:center; text-decoration:none;">Play →</a>
+            <a class="btn ghost" href="/ladder" style="flex:1; text-align:center; text-decoration:none;">Ladder →</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<script>
+const MARKS = ['king','queen','bishop','rook','knight','pawn'];
+let allCheckpoints = [];
+let selectedIdx = -1;
+
+function loadRegistry() {
+  fetch('/api/registry').then(r => r.json()).then(data => {
+    if (!data.runs || !data.runs.length) {
+      document.getElementById('ckpt-empty').textContent = 'No checkpoints found. Run a training cycle to create them.';
+      document.getElementById('count-pill').textContent = '0 checkpoints';
+      return;
+    }
+
+    allCheckpoints = [];
+    data.runs.forEach(run => {
+      run.checkpoints.forEach(ckpt => {
+        allCheckpoints.push({ ...ckpt, runName: run.run });
+      });
+    });
+    allCheckpoints.reverse(); // most recent first
+
+    document.getElementById('total-ckpts').textContent = allCheckpoints.length;
+    document.getElementById('total-runs').textContent = data.runs.length;
+    document.getElementById('count-pill').textContent = `${allCheckpoints.length} total`;
+
+    renderList(allCheckpoints);
+  }).catch(() => {
+    document.getElementById('ckpt-empty').textContent = 'Could not load checkpoints.';
+    document.getElementById('count-pill').textContent = 'Error';
+  });
+}
+
+function renderList(items) {
+  const wrap = document.getElementById('ckpt-list-wrap');
+  const empty = document.getElementById('ckpt-empty');
+  if (!items.length) {
+    wrap.innerHTML = '';
+    empty.textContent = 'No checkpoints match your search.';
+    empty.style.display = '';
+    document.getElementById('filter-count').textContent = '0 results';
+    return;
+  }
+  empty.style.display = 'none';
+  document.getElementById('filter-count').textContent = items.length === allCheckpoints.length ? '' : `${items.length} results`;
+
+  // Group by run
+  const byRun = {};
+  items.forEach(c => { (byRun[c.runName] = byRun[c.runName] || []).push(c); });
+
+  wrap.innerHTML = '';
+  Object.entries(byRun).forEach(([runName, ckpts], ri) => {
+    const sec = document.createElement('div');
+    sec.className = 'run-section';
+    const hdr = document.createElement('div');
+    hdr.className = 'run-header';
+    const mark = MARKS[ri % MARKS.length];
+    hdr.innerHTML = `<img src="/static/assets/marks/${mark}.svg"> ${runName} <span class="pill" style="font-size:.68rem; margin-left:auto;">${ckpts.length} ckpts</span>`;
+    sec.appendChild(hdr);
+
+    const listEl = document.createElement('div');
+    listEl.className = 'ckpt-list';
+    ckpts.forEach((c, ci) => {
+      const row = document.createElement('div');
+      row.className = 'ckpt' + (allCheckpoints.indexOf(c) === selectedIdx ? ' selected' : '');
+      const stepLabel = c.type === 'latest' ? 'latest' : c.cycle != null ? `cycle ${c.cycle}` : c.epoch != null ? `epoch ${c.epoch}` : '—';
+      const lossVal = c.total_loss != null ? c.total_loss.toFixed(4) : '—';
+      const eloVal = c.elo != null ? Math.round(c.elo) + ' Elo' : '';
+      const top1 = c.policy_top1 != null ? (c.policy_top1 * 100).toFixed(1) + '%' : '';
+      row.innerHTML = `
+        <span class="step">${stepLabel}</span>
+        <div><div class="name">${c.name || c.runName}</div><div class="sub">${[top1, eloVal].filter(Boolean).join(' · ') || 'no eval data'}</div></div>
+        ${lossVal !== '—' ? `<span class="loss good">${lossVal}</span>` : '<span class="loss" style="color:var(--dim)">—</span>'}
+        <span class="pill" style="font-size:.68rem;">${c.type || 'ckpt'}</span>
+      `;
+      row.addEventListener('click', () => selectCheckpoint(allCheckpoints.indexOf(c), c));
+      listEl.appendChild(row);
+    });
+    sec.appendChild(listEl);
+    wrap.appendChild(sec);
+  });
+}
+
+function selectCheckpoint(idx, c) {
+  selectedIdx = idx;
+  document.querySelectorAll('.ckpt').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  document.getElementById('detail-empty').style.display = 'none';
+  document.getElementById('detail-content').style.display = '';
+
+  const mark = MARKS[Math.abs(c.runName.charCodeAt(0)) % MARKS.length];
+  document.getElementById('detail-mark').src = `/static/assets/marks/${mark}.svg`;
+  document.getElementById('detail-name').textContent = c.name || c.runName;
+  document.getElementById('detail-sub').textContent = c.cycle != null ? `cycle ${c.cycle}` : c.epoch != null ? `epoch ${c.epoch}` : '';
+  document.getElementById('detail-type-pill').textContent = c.type || 'checkpoint';
+
+  const rows = [
+    ['Run', c.runName],
+    c.cycle != null && ['Cycle', c.cycle],
+    c.epoch != null && ['Epoch', c.epoch],
+    c.total_loss != null && ['Train loss', c.total_loss.toFixed(4)],
+    c.policy_loss != null && ['Policy loss', c.policy_loss.toFixed(4)],
+    c.value_loss != null && ['Value loss', c.value_loss.toFixed(4)],
+    c.policy_top1 != null && ['Policy top-1', (c.policy_top1*100).toFixed(1)+'%'],
+    c.value_mse != null && ['Value MSE', c.value_mse.toFixed(5)],
+    c.elo != null && ['Ladder Elo', Math.round(c.elo)],
+  ].filter(Boolean);
+
+  document.getElementById('detail-table').innerHTML = rows.map(([k, v]) =>
+    `<tr><td>${k}</td><td>${v}</td></tr>`
+  ).join('');
+}
+
+document.getElementById('search-input').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  const filtered = q ? allCheckpoints.filter(c => (c.runName||'').toLowerCase().includes(q) || (c.name||'').toLowerCase().includes(q)) : allCheckpoints;
+  renderList(filtered);
+});
+
+document.getElementById('refresh-btn').addEventListener('click', loadRegistry);
+
+loadRegistry();
+</script>
+</body>
+</html>

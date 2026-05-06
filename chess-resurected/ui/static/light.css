@@ -1,0 +1,95 @@
+/* Chess Resurrected — Light Mode (creamy)
+   Loaded after colors_and_type.css and chrome.css.
+   Activated by data-theme="light" on <html>. The aurora gradients shift
+   to warm peachy washes; surfaces become layered creams; ink stays deep
+   indigo so the brand identity reads cleanly. */
+
+html[data-theme="light"]{
+  /* ---- Surfaces (creams, layered) ---- */
+  --bg:        #FAF6EE;   /* page — warm off-white */
+  --bg-2:      #F4EEE0;   /* secondary band */
+  --panel:     #FFFBF2;   /* card surface (lifts off the page) */
+  --panel-2:   #F1E9D6;   /* raised */
+  --panel-3:   #E8DFC8;   /* hover / divider lift */
+  --field-bg:  #FFFCF5;
+  --line:        rgba(60, 50, 30, .10);
+  --line-strong: rgba(60, 50, 30, .22);
+  --ink:       #1A1530;
+
+  /* ---- Text (deep indigo, not pure black) ---- */
+  --text:    #1A1530;
+  --text-2:  #44406B;
+  --muted:   #7B7796;
+  --dim:     #B6B0CB;
+
+  /* ---- Aurora wash — warm peach + soft azure ---- */
+  --bg-aurora:
+    radial-gradient(60% 40% at 15% 8%,  rgba(255, 179, 71, .22), transparent 60%),
+    radial-gradient(50% 35% at 85% 18%, rgba(255, 91, 168, .14), transparent 60%),
+    radial-gradient(60% 50% at 50% 100%, rgba(79, 134, 255, .10), transparent 60%),
+    var(--bg);
+
+  /* ---- Soft hero gradient (less neon on cream) ---- */
+  --grad-hero-soft: linear-gradient(
+    100deg,
+    rgba(79, 134, 255, .12) 0%,
+    rgba(155, 108, 255, .12) 30%,
+    rgba(255, 91, 168, .12) 60%,
+    rgba(255, 179, 71, .16) 100%
+  );
+
+  /* ---- Shadows (warm + softer) ---- */
+  --shadow-card:
+    0 30px 80px -40px rgba(60, 40, 10, .25),
+    0 1px 0 rgba(255, 255, 255, .60) inset,
+    0 0 0 1px rgba(60, 50, 30, .04);
+  --shadow-glow-azure:   0 0 80px -30px rgba(79, 134, 255, .35);
+  --shadow-glow-magenta: 0 0 80px -30px rgba(255, 91, 168, .30);
+
+  /* ---- Square colors for chess board (warmer) ---- */
+  --square-light: #F2EAD3;
+  --square-dark:  #B58863;
+}
+
+/* ---- chrome adjustments only needed for light ---- */
+html[data-theme="light"] .topbar{
+  background: rgba(250, 246, 238, .82);
+  border-bottom: 1px solid var(--line);
+}
+html[data-theme="light"] .topbar nav a:hover{ background: var(--panel-2); }
+html[data-theme="light"] .topbar nav a.active{ background: var(--panel-3); color: var(--text); }
+html[data-theme="light"] .topbar .avatar{ color: #FFFBF2; }
+html[data-theme="light"] .btn.primary{ color: #FFFBF2; }
+html[data-theme="light"] .pill.gradient{ color: #FFFBF2; }
+
+/* The page-load curtain on light becomes a quick cream flash, not a black blackout */
+html[data-theme="light"] .curtain{ background: var(--bg); }
+
+/* Light-mode chess board squares (where used) */
+html[data-theme="light"] .sq.l{ background: #F2EAD3; }
+html[data-theme="light"] .sq.d{ background: #B58863; }
+
+/* ---- Theme toggle (floating, bottom-right) ---- */
+.theme-toggle{
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 90;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast);
+  font-family: var(--font-sans);
+}
+.theme-toggle:hover{ transform: translateY(-2px); background: var(--panel-2); }
+.theme-toggle .ico{ display: block; line-height: 1; }
+html[data-theme="light"] .theme-toggle .ico::before{ content: "☾"; }
+html[data-theme="dark"]  .theme-toggle .ico::before{ content: "☀"; }

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search · Chess Resurrected</title>
+<link rel="stylesheet" href="/static/colors_and_type.css">
+<link rel="stylesheet" href="/static/chrome.css">
+<link rel="stylesheet" href="/static/light.css">
+<script src="/static/theme.js"></script>
+<style>
+  .search-grid{ display:grid; grid-template-columns:1fr 340px; gap:24px;}
+  @media(max-width:900px){ .search-grid{ grid-template-columns:1fr;} }
+
+  .tree-wrap{
+    position:relative; height:600px; border-radius:var(--r-lg); overflow:hidden;
+    background:radial-gradient(ellipse at 50% 30%, rgba(79,134,255,.08), transparent 60%), var(--panel);
+    border:1px solid var(--line);
+  }
+  .tree-wrap svg{ width:100%; height:100%; display:block;}
+  .tree-stats{
+    position:absolute; right:20px; top:20px;
+    padding:12px 18px; background:rgba(7,9,26,.72); backdrop-filter:blur(12px);
+    border:1px solid var(--line); border-radius:var(--r-md);
+    display:flex; gap:20px; z-index:2;
+  }
+  .tree-stats .s{ font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); font-weight:500; margin-bottom:3px;}
+  .tree-stats .v{ font-family:var(--font-mono); font-size:1rem; color:var(--text); font-weight:600;}
+
+  .fen-row{ display:flex; gap:8px; margin-bottom:14px;}
+  .fen-input{
+    flex:1; height:42px; padding:0 14px; border-radius:var(--r-md);
+    background:var(--field-bg); border:1px solid var(--line); color:var(--text);
+    font:0.82rem var(--font-mono);
+  }
+  .fen-input:focus{ outline:none; border-color:var(--grad-azure); box-shadow:0 0 0 3px rgba(79,134,255,.12);}
+
+  .move-rank{ display:flex; flex-direction:column; gap:7px;}
+  .move{
+    display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+    padding:12px 14px; border-radius:var(--r-md); background:var(--panel-2); border:1px solid var(--line);
+    cursor:pointer; transition:all 180ms var(--ease-out);
+  }
+  .move:hover{ background:var(--panel-3); transform:translateX(2px);}
+  .move.best{ border-color:transparent; background:linear-gradient(var(--panel-2),var(--panel-2)) padding-box, var(--grad-hero) border-box; border:1px solid transparent;}
+  .move .nm{ font-family:var(--font-mono); font-weight:700; font-size:1rem;}
+  .move .bar{ height:5px; border-radius:3px; background:var(--panel-3); overflow:hidden; margin-top:5px;}
+  .move .bar i{ display:block; height:100%; background:var(--grad-hero); width:0; transition:width 900ms var(--ease-out);}
+  .move .vs{ font-family:var(--font-mono); font-size:.72rem; color:var(--muted); margin-top:3px;}
+  .move .ev{ font-family:var(--font-mono); font-weight:700; font-size:1rem;}
+  .move .ev.pos{ color:var(--green);} .move .ev.neg{ color:var(--red);}
+
+  .pos-board{ display:grid; grid-template-columns:repeat(8,1fr); aspect-ratio:1; border-radius:var(--r-md); overflow:hidden; border:1px solid var(--line);}
+  .pos-sq{ display:grid; place-items:center; font-size:1.3rem;}
+  .pos-sq.l{ background:var(--square-light);} .pos-sq.d{ background:var(--square-dark);}
+  .pos-sq.hl{ outline:3px solid rgba(79,134,255,.7); outline-offset:-3px;}
+
+  .loading-msg{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--muted); font-size:.9rem; gap:10px;}
+</style>
+</head>
+<body>
+
+<div class="curtain"><img class="mark" src="/static/assets/marks/knight.svg" alt=""></div>
+
+<header class="topbar">
+  <div class="logo"><img src="/static/assets/marks/wordmark.svg" alt="Chess Resurrected" style="height:24px;width:auto;display:block;"></div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/run">Run</a>
+    <a href="/registry">Registry</a>
+    <a href="/ladder">Ladder</a>
+    <a href="/search" class="active">Search</a>
+    <a href="/play">Play</a>
+  </nav>
+  <div class="right">
+    <span class="pill" id="model-pill">No checkpoint</span>
+    <button class="btn primary" id="run-btn">Run MCTS</button>
+    <div class="avatar">CR</div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="page-header fade-up" style="animation-delay:200ms">
+    <div class="crumb">MCTS search tree</div>
+    <h1>Search <span class="accent">tree.</span></h1>
+    <div class="meta">
+      <span>Enter a FEN or use the starting position. Click <b>Run MCTS</b> to visualise the search tree from your trained model.</span>
+    </div>
+  </section>
+
+  <div class="fen-row fade-up" style="animation-delay:320ms">
+    <input class="fen-input" id="fen-input" value="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" placeholder="FEN string…">
+    <select class="btn" id="sims-select" style="height:42px; border-radius:var(--r-md);">
+      <option value="32">32 sims</option>
+      <option value="64" selected>64 sims</option>
+      <option value="128">128 sims</option>
+      <option value="256">256 sims</option>
+    </select>
+    <button class="btn ghost" id="startpos-btn">Start pos</button>
+  </div>
+
+  <section class="search-grid fade-up" style="animation-delay:440ms">
+    <!-- Tree visualization -->
+    <div class="tree-wrap">
+      <div class="tree-stats" id="tree-stats" style="display:none;">
+        <div><div class="s">sims</div><div class="v" id="stat-sims">—</div></div>
+        <div><div class="s">depth</div><div class="v" id="stat-depth">—</div></div>
+        <div><div class="s">eval</div><div class="v" id="stat-eval">—</div></div>
+      </div>
+      <svg id="tree-svg" viewBox="0 0 1000 600">
+        <defs>
+          <linearGradient id="treeg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#4F86FF" stop-opacity=".5"/>
+            <stop offset="1" stop-color="#FF5BA8" stop-opacity=".5"/>
+          </linearGradient>
+          <radialGradient id="nodefill"><stop offset="0" stop-color="#FF5BA8" stop-opacity=".9"/><stop offset="1" stop-color="#4F86FF" stop-opacity=".5"/></radialGradient>
+          <radialGradient id="bestfill"><stop offset="0" stop-color="#FFB347"/><stop offset="1" stop-color="#FF5BA8"/></radialGradient>
+        </defs>
+        <text x="500" y="280" text-anchor="middle" fill="rgba(122,128,174,.6)" font-size="14" font-family="Geist, system-ui">Enter a FEN and click Run MCTS</text>
+      </svg>
+      <div class="loading-msg" id="loading-msg" style="position:absolute; inset:0; display:none; background:rgba(17,20,46,.7); backdrop-filter:blur(4px);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="animation:spin 1s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke="rgba(79,134,255,.3)" stroke-width="3"/>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#4F86FF" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        Running MCTS search…
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <aside style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px;">Position</div>
+        <div class="pos-board" id="pos-board"></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px;">Top moves</div>
+        <div class="move-rank" id="moves">
+          <div style="color:var(--dim); font-size:.88rem; font-style:italic;">Run MCTS to see top moves.</div>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+const PIECES = {'k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟','K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙'};
+
+function fenToBoard(fen) {
+  const rows = fen.split(' ')[0].split('/');
+  const grid = [];
+  rows.forEach(row => {
+    let expanded = [];
+    for (const ch of row) {
+      if (/\d/.test(ch)) expanded = expanded.concat(Array(+ch).fill('.'));
+      else expanded.push(ch);
+    }
+    grid.push(expanded);
+  });
+  return grid;
+}
+
+function renderPosition(fen, highlight = []) {
+  const board = fenToBoard(fen);
+  const el = document.getElementById('pos-board');
+  el.innerHTML = '';
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const p = board[r][f];
+      const sq = 'abcdefgh'[f] + (8 - r);
+      const div = document.createElement('div');
+      div.className = 'pos-sq ' + ((r + f) % 2 ? 'd' : 'l');
+      if (highlight.includes(sq)) div.classList.add('hl');
+      if (p !== '.') div.textContent = PIECES[p] || p;
+      el.appendChild(div);
+    }
+  }
+}
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function renderTree(treeData) {
+  const svg = document.getElementById('tree-svg');
+  svg.innerHTML = `<defs>
+    <linearGradient id="treeg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F86FF" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#FF5BA8" stop-opacity=".5"/>
+    </linearGradient>
+    <radialGradient id="nodefill"><stop offset="0" stop-color="#FF5BA8" stop-opacity=".9"/><stop offset="1" stop-color="#4F86FF" stop-opacity=".5"/></radialGradient>
+    <radialGradient id="bestfill"><stop offset="0" stop-color="#FFB347"/><stop offset="1" stop-color="#FF5BA8"/></radialGradient>
+  </defs>`;
+
+  const { nodes, edges } = treeData;
+  const byId = {};
+  nodes.forEach(n => byId[n.id] = n);
+
+  // Draw edges
+  edges.forEach(([a, b], i) => {
+    const A = byId[a], B = byId[b];
+    if (!A || !B) return;
+    const path = svgEl('path', {
+      d: `M ${A.x} ${A.y} C ${A.x} ${(A.y+B.y)/2}, ${B.x} ${(A.y+B.y)/2}, ${B.x} ${B.y}`,
+      fill: 'none', stroke: 'url(#treeg)',
+      'stroke-width': Math.max(0.5, Math.min(4, (B.visits||1)/40)),
+      'stroke-linecap': 'round'
+    });
+    path.style.opacity = '0';
+    path.style.transition = 'opacity 500ms cubic-bezier(.2,.8,.2,1)';
+    svg.appendChild(path);
+    setTimeout(() => path.style.opacity = String(0.2 + Math.min(0.65, (B.visits||1)/200)), 800 + (B.depth||0)*200 + i*5);
+  });
+
+  // Draw nodes
+  nodes.forEach((n, i) => {
+    const g = svgEl('g', { transform: `translate(${n.x},${n.y})` });
+    const r = n.depth === 0 ? 18 : Math.max(3, Math.min(16, Math.sqrt(n.visits||1)/1.2));
+    const c = svgEl('circle', {
+      r: 0,
+      fill: n.depth === 0 ? 'url(#bestfill)' : ((n.q||0) > 0 ? 'url(#nodefill)' : '#232A52'),
+      stroke: n.depth === 0 ? '#FFB347' : ((n.q||0) > 0.3 ? '#FFB34766' : 'rgba(255,255,255,.1)'),
+      'stroke-width': '1'
+    });
+    if (n.depth === 0) {
+      const halo = svgEl('circle', { r: r+14, fill: 'none', stroke: 'url(#bestfill)', 'stroke-width': '1', opacity: '.35' });
+      g.appendChild(halo);
+    }
+    g.appendChild(c);
+    // Move label for top-level children
+    if (n.depth === 1 && n.move) {
+      const t = svgEl('text', { x: 0, y: -r-8, 'text-anchor': 'middle', 'font-size': '11', fill: 'var(--text)', 'font-family': 'var(--font-mono)', 'font-weight': '600' });
+      t.textContent = n.move;
+      g.appendChild(t);
+    }
+    g.style.opacity = '0';
+    g.style.transition = 'opacity 500ms cubic-bezier(.2,.8,.2,1)';
+    svg.appendChild(g);
+    setTimeout(() => {
+      c.setAttribute('r', r);
+      c.style.transition = 'r 500ms cubic-bezier(.2,.8,.2,1)';
+      g.style.opacity = '1';
+    }, 900 + (n.depth||0)*200 + i*6);
+  });
+}
+
+function renderMoves(moves, totalVisits) {
+  const el = document.getElementById('moves');
+  if (!moves || !moves.length) {
+    el.innerHTML = '<div style="color:var(--dim); font-size:.88rem; font-style:italic;">No moves available.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  moves.forEach((m, i) => {
+    const pct = ((m.visits || 0) / (totalVisits || 1) * 100).toFixed(1);
+    const isPos = (m.q || 0) >= 0;
+    const sign = isPos ? '+' : '';
+    const div = document.createElement('div');
+    div.className = 'move' + (i === 0 ? ' best' : '');
+    div.innerHTML = `
+      <span class="nm">${m.move || '?'}</span>
+      <div>
+        <div class="bar"><i style="width:0"></i></div>
+        <div class="vs">${m.visits} visits · policy ${((m.prior||0)*100).toFixed(1)}%</div>
+      </div>
+      <span class="ev ${isPos?'pos':'neg'}">${sign}${(m.q||0).toFixed(2)}</span>
+    `;
+    div.style.opacity = '0'; div.style.transform = 'translateX(-8px)';
+    div.style.transition = 'all 400ms cubic-bezier(.2,.8,.2,1)';
+    el.appendChild(div);
+    setTimeout(() => {
+      div.style.opacity = '1'; div.style.transform = 'none';
+      div.querySelector('.bar i').style.width = pct + '%';
+    }, 1200 + i * 80);
+  });
+}
+
+function runSearch() {
+  const fen = document.getElementById('fen-input').value.trim();
+  const sims = parseInt(document.getElementById('sims-select').value);
+  if (!fen) return;
+
+  document.getElementById('loading-msg').style.display = 'flex';
+  document.getElementById('tree-stats').style.display = 'none';
+  renderPosition(fen);
+
+  fetch(`/api/search?fen=${encodeURIComponent(fen)}&sims=${sims}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('loading-msg').style.display = 'none';
+      if (data.error) {
+        document.getElementById('tree-svg').innerHTML = `<text x="500" y="300" text-anchor="middle" fill="rgba(255,92,92,.8)" font-size="13" font-family="Geist, system-ui">${data.error}</text>`;
+        return;
+      }
+      // Stats
+      document.getElementById('tree-stats').style.display = 'flex';
+      document.getElementById('stat-sims').textContent = data.total_visits || sims;
+      document.getElementById('stat-depth').textContent = (data.tree?.nodes?.filter(n => n.depth > 0).length > 0
+        ? Math.max(...data.tree.nodes.map(n => n.depth || 0)) + ' ply' : '—');
+      const bestQ = data.moves?.[0]?.q;
+      document.getElementById('stat-eval').textContent = bestQ != null ? (bestQ >= 0 ? '+' : '') + bestQ.toFixed(2) : '—';
+
+      if (data.tree) renderTree(data.tree);
+      if (data.moves) renderMoves(data.moves, data.total_visits);
+
+      // Highlight best move source squares
+      const highlight = data.moves?.slice(0,1).map(m => m.from).filter(Boolean) || [];
+      renderPosition(fen, highlight);
+    })
+    .catch(err => {
+      document.getElementById('loading-msg').style.display = 'none';
+      document.getElementById('tree-svg').innerHTML = `<text x="500" y="300" text-anchor="middle" fill="rgba(255,92,92,.8)" font-size="13" font-family="Geist, system-ui">Search failed: ${err.message}</text>`;
+    });
+}
+
+document.getElementById('run-btn').addEventListener('click', runSearch);
+document.getElementById('startpos-btn').addEventListener('click', () => {
+  document.getElementById('fen-input').value = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  renderPosition(document.getElementById('fen-input').value);
+});
+document.getElementById('fen-input').addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+
+// Check if model is available
+fetch('/training/state').then(r => r.json()).then(s => {
+  const elo = s.elo_estimate;
+  const pill = document.getElementById('model-pill');
+  if (elo) {
+    pill.textContent = `Model · ${Math.round(elo)} Elo`;
+    pill.classList.add('live');
+  }
+});
+
+renderPosition(document.getElementById('fen-input').value);
+</script>
+</body>
+</html>

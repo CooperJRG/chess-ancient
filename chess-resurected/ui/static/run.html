@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run · Chess Resurrected</title>
+<link rel="stylesheet" href="/static/colors_and_type.css">
+<link rel="stylesheet" href="/static/chrome.css">
+<link rel="stylesheet" href="/static/light.css">
+<script src="/static/theme.js"></script>
+<style>
+  .grid-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;}
+  .grid-stats-2{ display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:24px;}
+  @media(max-width:900px){ .grid-stats{ grid-template-columns:repeat(2,1fr);} .grid-stats-2{ grid-template-columns:repeat(3,1fr);} }
+  @media(max-width:600px){ .grid-stats{ grid-template-columns:1fr 1fr;} .grid-stats-2{ grid-template-columns:repeat(2,1fr);} }
+
+  .metric-num{ font-size:clamp(1.6rem,3vw,2.8rem); font-weight:700; letter-spacing:-.02em; line-height:1;}
+  .metric-num.grad{ background:var(--grad-hero); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .delta-tag{ font-size:.78rem; color:var(--green); font-family:var(--font-mono); margin-top:6px;}
+  .delta-tag.muted{ color:var(--muted);}
+
+  .chart-grid{ display:grid; grid-template-columns:1.6fr 1fr; gap:16px; margin-bottom:16px;}
+  @media(max-width:900px){ .chart-grid{ grid-template-columns:1fr;} }
+  .chart{ height:260px; position:relative; overflow:hidden;}
+  .chart svg{ width:100%; height:100%;}
+  .chart .y-label{ font-size:.66rem; fill:var(--muted); font-family:var(--font-mono);}
+  .chart .x-label{ font-size:.66rem; fill:var(--muted); font-family:var(--font-mono);}
+  .chart .grid-line{ stroke:var(--line); stroke-width:1;}
+  .chart-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+  .chart-head h3{ font-size:1rem; font-weight:600; margin:0;}
+  .chart-head .num{ font-family:var(--font-mono); font-size:.84rem; color:var(--text-2);}
+  .legend{ display:flex; gap:14px; margin-top:8px; flex-wrap:wrap;}
+  .legend span{ display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-2);}
+  .legend i{ width:10px; height:2px; display:inline-block;}
+  .chart-empty{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--dim); font-size:.88rem; font-style:italic;}
+
+  /* Stage strip */
+  .stage-row{ display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:0 0 16px;}
+  @media(max-width:600px){ .stage-row{ grid-template-columns:repeat(3,1fr);} }
+  .stage-pill{
+    border:1px solid var(--line); border-radius:var(--r-md); padding:9px 8px;
+    color:var(--muted); background:var(--panel-2); text-align:center; font-size:.76rem; font-weight:500;
+    transition:all 220ms var(--ease-out);
+  }
+  .stage-pill.active{ color:var(--grad-amber); border-color:rgba(255,179,71,.55); background:rgba(255,179,71,.07);}
+  .stage-pill.done{ color:var(--green); border-color:rgba(74,222,128,.4); background:rgba(74,222,128,.05);}
+  .stage-pill.error{ color:var(--red); border-color:rgba(255,92,92,.4);}
+
+  /* Progress bar */
+  .prog-wrap{ height:6px; border-radius:3px; background:var(--panel-3); overflow:hidden; margin-bottom:16px;}
+  .prog-inner{ height:100%; background:var(--grad-hero); transition:width .4s var(--ease-out); width:0%;}
+
+  /* Log */
+  .log-box{
+    height:170px; overflow:auto; border-radius:var(--r-md);
+    background:var(--field-bg); border:1px solid var(--line);
+    padding:10px 12px; font-family:var(--font-mono); font-size:.78rem; color:var(--muted);
+  }
+  .log-line{ display:flex; gap:10px; padding:2px 0;}
+  .log-time{ color:var(--grad-amber); flex:0 0 auto;}
+
+  /* Settings accordion */
+  details.settings{ border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; margin-bottom:24px;}
+  details.settings summary{
+    padding:18px 24px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:10px;
+    list-style:none; background:var(--panel); user-select:none;
+    font-size:.95rem;
+  }
+  details.settings summary::-webkit-details-marker{ display:none;}
+  details.settings summary::after{ content:"▾"; margin-left:auto; color:var(--muted); transition:transform 200ms;}
+  details.settings[open] summary::after{ transform:rotate(-180deg);}
+  .settings-body{ padding:24px; background:var(--panel); border-top:1px solid var(--line); display:grid; gap:18px;}
+  .field-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  .field-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media(max-width:600px){ .field-grid{ grid-template-columns:1fr;} .field-grid-2{ grid-template-columns:1fr;} }
+  .field{ display:grid; gap:5px;}
+  .field label{ font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:500;}
+  .field input, .field select{
+    height:38px; padding:0 12px; border-radius:var(--r-md);
+    border:1px solid var(--line); background:var(--field-bg); color:var(--text);
+    font-family:var(--font-mono); font-size:.88rem;
+    transition:border-color 180ms;
+  }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--grad-azure); box-shadow:0 0 0 3px rgba(79,134,255,.12);}
+  .field-section-label{
+    font-size:.7rem; text-transform:uppercase; letter-spacing:.12em;
+    color:var(--muted); font-weight:500; padding-bottom:8px; border-bottom:1px solid var(--line);
+    grid-column:1/-1;
+  }
+
+  /* Controls row */
+  .controls-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+
+  /* Artifacts */
+  .artifact-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  @media(max-width:600px){ .artifact-grid{ grid-template-columns:1fr;} }
+  .artifact{
+    border:1px solid var(--line); border-radius:var(--r-md); padding:10px 12px;
+    background:var(--field-bg); min-width:0;
+  }
+  .artifact .ak{ font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:500; margin-bottom:4px;}
+  .artifact code{ display:block; font-family:var(--font-mono); font-size:.76rem; color:var(--text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  /* Stat sub-cards */
+  .sub-stat{ background:var(--panel-2); border:1px solid var(--line); border-radius:var(--r-md); padding:12px 14px;}
+  .sub-stat .sk{ font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:500; margin-bottom:6px;}
+  .sub-stat .sv{ font-family:var(--font-mono); font-size:1.05rem; font-weight:600; color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="curtain"><img class="mark" src="/static/assets/marks/knight.svg" alt=""></div>
+
+<header class="topbar">
+  <div class="logo"><img src="/static/assets/marks/wordmark.svg" alt="Chess Resurrected" style="height:24px;width:auto;display:block;"></div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/run" class="active">Run</a>
+    <a href="/registry">Registry</a>
+    <a href="/ladder">Ladder</a>
+    <a href="/search">Search</a>
+    <a href="/play">Play</a>
+  </nav>
+  <div class="right">
+    <span class="pill" id="stage-pill">idle</span>
+    <span class="pill" id="elapsed-pill">00:00</span>
+    <div class="avatar">CR</div>
+  </div>
+</header>
+
+<main class="page">
+
+  <section class="page-header fade-up" style="animation-delay:200ms">
+    <div class="crumb" id="crumb">Run</div>
+    <h1>Run <span class="accent" id="run-name-head">—</span></h1>
+    <div class="meta">
+      <span><b id="meta-device">—</b></span>
+      <span class="dot">·</span>
+      <span><b>Cycle</b> <span id="meta-cycle">—</span></span>
+      <span class="dot">·</span>
+      <span><b>Samples</b> <span id="meta-samples">—</span></span>
+      <span class="dot">·</span>
+      <span id="meta-status">Ready</span>
+    </div>
+  </section>
+
+  <!-- Primary metrics -->
+  <section class="grid-stats fade-up" style="animation-delay:380ms">
+    <div class="card glow">
+      <div class="card-label">Ladder Elo</div>
+      <div class="metric-num grad" id="m-elo">—</div>
+      <div class="delta-tag muted" id="m-elo-ci">vs Stockfish</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Policy loss</div>
+      <div class="metric-num" id="m-policy">—</div>
+      <div class="delta-tag muted" id="m-top1">top-1 —</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Value MSE</div>
+      <div class="metric-num" id="m-value">—</div>
+      <div class="delta-tag muted" id="m-top5">top-5 —</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Throughput</div>
+      <div class="metric-num" id="m-rate">—</div>
+      <div class="delta-tag muted">samples / sec</div>
+    </div>
+  </section>
+
+  <!-- Secondary stats -->
+  <section class="grid-stats-2 fade-up" style="animation-delay:460ms">
+    <div class="sub-stat"><div class="sk">Train loss</div><div class="sv" id="s-loss">—</div></div>
+    <div class="sub-stat"><div class="sk">Draw rate</div><div class="sv" id="s-draws">—</div></div>
+    <div class="sub-stat"><div class="sk">Avg ply</div><div class="sv" id="s-ply">—</div></div>
+    <div class="sub-stat"><div class="sk">Replay buffer</div><div class="sv" id="s-replay">—</div></div>
+    <div class="sub-stat"><div class="sk">Latency</div><div class="sv" id="s-latency">—</div></div>
+    <div class="sub-stat"><div class="sk">Last update</div><div class="sv" id="s-age">—</div></div>
+  </section>
+
+  <!-- Charts -->
+  <section class="chart-grid fade-up" style="animation-delay:540ms">
+    <div class="card">
+      <div class="chart-head">
+        <div>
+          <h3>Loss curve</h3>
+          <div class="legend">
+            <span><i style="background:#5BE3C2"></i> total</span>
+            <span><i style="background:#4F86FF"></i> policy</span>
+            <span><i style="background:#FFB347"></i> value</span>
+          </div>
+        </div>
+        <span class="num" id="loss-epoch-label">epoch 0</span>
+      </div>
+      <div class="chart" id="chart-loss">
+        <div class="chart-empty">Loss data will appear as training runs</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-head">
+        <h3>Elo over cycles</h3>
+        <span class="num" id="elo-label">—</span>
+      </div>
+      <div class="chart" id="chart-elo">
+        <div class="chart-empty">Ladder results will appear here</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage progress -->
+  <div class="card fade-up" style="animation-delay:600ms; margin-bottom:16px; padding:20px 24px;">
+    <div class="stage-row" id="stage-row">
+      <div class="stage-pill" data-stage="generate">Generate</div>
+      <div class="stage-pill" data-stage="filter">Filter</div>
+      <div class="stage-pill" data-stage="train">Train</div>
+      <div class="stage-pill" data-stage="evaluate">Evaluate</div>
+      <div class="stage-pill" data-stage="ladder">Ladder</div>
+      <div class="stage-pill" data-stage="checkpoint">Checkpoint</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-inner" id="prog-bar"></div></div>
+    <div style="display:flex; gap:24px; font-size:.88rem; color:var(--text-2);">
+      <span id="stage-detail">Ready</span>
+      <span style="margin-left:auto; font-family:var(--font-mono);" id="stage-count"></span>
+    </div>
+    <div class="log-box" id="run-log" style="margin-top:14px;">
+      <div class="log-line"><span class="log-time">--:--:--</span><span>Run log streams here.</span></div>
+    </div>
+  </div>
+
+  <!-- Controls + Artifacts -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;" class="fade-up" style="animation-delay:660ms">
+    <div class="card">
+      <div class="card-label" style="margin-bottom:14px">Controls</div>
+      <div class="controls-row">
+        <button class="btn primary" id="btn-start">Start run</button>
+        <button class="btn ghost" id="btn-stop" disabled>Stop</button>
+        <button class="btn ghost" id="btn-reset">Reset</button>
+      </div>
+      <div style="margin-top:12px; font-size:.84rem; color:var(--text-2);" id="ctrl-status">Pipeline idle</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="margin-bottom:14px">Artifacts</div>
+      <div class="artifact-grid" id="artifacts">
+        <div style="color:var(--dim); font-size:.84rem; font-style:italic; grid-column:1/-1;">Artifacts appear after a run starts.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <details class="settings fade-up" style="animation-delay:720ms">
+    <summary>
+      <img src="/static/assets/marks/bishop.svg" style="width:20px; opacity:.7;" alt="">
+      Pipeline settings
+    </summary>
+    <div class="settings-body">
+      <div class="field-grid">
+        <span class="field-section-label">Run identity</span>
+        <div class="field">
+          <label for="run_name">Run name</label>
+          <input id="run_name" value="cuda-mainline">
+        </div>
+        <div class="field">
+          <label for="preset">Preset</label>
+          <select id="preset">
+            <option value="smoke">Smoke (quick test)</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="serious">Serious</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pipeline_mode">Mode</label>
+          <select id="pipeline_mode">
+            <option value="finite">Finite</option>
+            <option value="infinite">Infinite</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-grid">
+        <span class="field-section-label">Hardware</span>
+        <div class="field">
+          <label for="device">Device</label>
+          <select id="device">
+            <option value="cuda">CUDA</option>
+            <option value="cpu">CPU</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="amp">Mixed precision (AMP)</label>
+          <select id="amp">
+            <option value="true">On</option>
+            <option value="false">Off</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="max_cycles">Max cycles (0 = ∞)</label>
+          <input id="max_cycles" type="number" min="0" step="1">
+        </div>
+      </div>
+      <div class="field-grid">
+        <span class="field-section-label">Self-play</span>
+        <div class="field">
+          <label for="cycle_games">Games / cycle</label>
+          <input id="cycle_games" type="number" min="1" step="10">
+        </div>
+        <div class="field">
+          <label for="warmup_cycles">Warmup cycles</label>
+          <input id="warmup_cycles" type="number" min="0" step="1">
+        </div>
+        <div class="field">
+          <label for="selfplay_mode">Training source</label>
+          <select id="selfplay_mode">
+            <option value="mcts">Neural MCTS</option>
+            <option value="stockfish-copy">Copy Stockfish</option>
+            <option value="rust-copy">Copy Rust engine</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="max_ply">Max ply</label>
+          <input id="max_ply" type="number" min="20" step="10">
+        </div>
+        <div class="field">
+          <label for="mcts_simulations">MCTS sims</label>
+          <input id="mcts_simulations" type="number" min="1" step="8">
+        </div>
+        <div class="field">
+          <label for="stockfish_nodes">Stockfish nodes</label>
+          <input id="stockfish_nodes" type="number" min="1" step="25">
+        </div>
+        <div class="field">
+          <label for="interactive_simulations">Play sims</label>
+          <input id="interactive_simulations" type="number" min="1" step="8">
+        </div>
+        <div class="field">
+          <label for="random_opening_moves">Opening ply</label>
+          <input id="random_opening_moves" type="number" min="0" step="1">
+        </div>
+      </div>
+      <div class="field-grid">
+        <span class="field-section-label">Replay buffer</span>
+        <div class="field">
+          <label for="replay_buffer_size">Buffer cap</label>
+          <input id="replay_buffer_size" type="number" min="1000" step="1000">
+        </div>
+        <div class="field">
+          <label for="decisive_sample_weight">Decisive weight</label>
+          <input id="decisive_sample_weight" type="number" min="1" step=".25">
+        </div>
+        <div class="field">
+          <label for="draw_rate_warning">Draw warn threshold</label>
+          <input id="draw_rate_warning" type="number" min="0" max="1" step=".05">
+        </div>
+      </div>
+      <div class="field-grid">
+        <span class="field-section-label">Training</span>
+        <div class="field">
+          <label for="train_epochs">Epochs / cycle</label>
+          <input id="train_epochs" type="number" min="1">
+        </div>
+        <div class="field">
+          <label for="batch_size">Batch size</label>
+          <input id="batch_size" type="number" min="16" step="16">
+        </div>
+        <div class="field">
+          <label for="learning_rate">Learning rate</label>
+          <input id="learning_rate" type="number" step="0.0001">
+        </div>
+        <div class="field">
+          <label for="num_blocks">Residual blocks</label>
+          <input id="num_blocks" type="number" min="1">
+        </div>
+        <div class="field">
+          <label for="channels">Channels</label>
+          <input id="channels" type="number" min="8" step="8">
+        </div>
+        <div class="field">
+          <label for="dropout_p">Dropout</label>
+          <input id="dropout_p" type="number" min="0" max=".5" step=".01">
+        </div>
+      </div>
+      <div class="field-grid">
+        <span class="field-section-label">Ladder</span>
+        <div class="field">
+          <label for="run_ladder">Run ladder</label>
+          <select id="run_ladder">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ladder_games">Games</label>
+          <input id="ladder_games" type="number" min="2" step="2">
+        </div>
+        <div class="field">
+          <label for="ladder_movetime_ms">Move ms</label>
+          <input id="ladder_movetime_ms" type="number" min="10" step="10">
+        </div>
+      </div>
+      <div class="field-grid">
+        <span class="field-section-label">Paths</span>
+        <div class="field">
+          <label for="engine_path">Rust engine</label>
+          <input id="engine_path">
+        </div>
+        <div class="field">
+          <label for="stockfish_path">Stockfish</label>
+          <input id="stockfish_path" placeholder="Auto-detected or set STOCKFISH_PATH">
+        </div>
+        <div class="field">
+          <label for="seed">Seed</label>
+          <input id="seed" type="number" min="1">
+        </div>
+      </div>
+      <div class="controls-row">
+        <button class="btn primary" id="btn-save">Save settings</button>
+        <button class="btn ghost" id="btn-refresh-settings">Refresh</button>
+      </div>
+    </div>
+  </details>
+
+</main>
+
+<script>
+// ── helpers ─────────────────────────────────────────────────────────────────
+const el = id => document.getElementById(id);
+const setText = (id, v) => { const e = el(id); if (e) e.textContent = v; };
+function elapsed(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function age(ts) {
+  if (!ts) return '—';
+  const sec = Math.max(0, Math.floor(Date.now()/1000 - ts));
+  return sec < 90 ? `${sec}s ago` : elapsed(sec) + ' ago';
+}
+function fmt(n, d=3) { return Number.isFinite(+n) && +n ? (+n).toFixed(d) : '—'; }
+
+// ── chart helpers ────────────────────────────────────────────────────────────
+function svgEl(tag, attrs) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+function pathFromPoints(pts) {
+  return pts.map((p,i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+}
+
+function lineChart(containerId, series, opts = {}) {
+  const wrap = el(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (!series.length || !series[0].data.length) {
+    wrap.innerHTML = '<div class="chart-empty">No data yet</div>';
+    return;
+  }
+  const w = wrap.clientWidth || 400, h = wrap.clientHeight || 260;
+  const ML = 44, MR = 14, MT = 14, MB = 28;
+  const innerW = w - ML - MR, innerH = h - MT - MB;
+  const allY = series.flatMap(s => s.data);
+  const yMin = opts.yMin ?? Math.min(...allY);
+  const yMax = opts.yMax ?? Math.max(...allY);
+  const yPad = (yMax - yMin) * 0.1 || 0.01;
+  const yLo = yMin - yPad, yHi = yMax + yPad;
+  const n = Math.max(...series.map(s => s.data.length));
+  const xFn = i => ML + (i / Math.max(n - 1, 1)) * innerW;
+  const yFn = v => MT + innerH - ((v - yLo) / (yHi - yLo)) * innerH;
+
+  const svg = svgEl('svg', { viewBox: `0 0 ${w} ${h}`, preserveAspectRatio: 'none' });
+  const defs = svgEl('defs');
+
+  // grid lines + labels
+  for (let g = 0; g <= 4; g++) {
+    const gy = MT + (g / 4) * innerH;
+    svg.appendChild(svgEl('line', { x1: ML, x2: w - MR, y1: gy, y2: gy, class: 'grid-line' }));
+    const v = yHi - (g / 4) * (yHi - yLo);
+    const lab = svgEl('text', { x: ML - 6, y: gy + 4, class: 'y-label', 'text-anchor': 'end' });
+    lab.textContent = opts.yFmt ? opts.yFmt(v) : v.toFixed(3);
+    svg.appendChild(lab);
+  }
+
+  series.forEach((s, si) => {
+    const g = svgEl('linearGradient', { id: `${containerId}-g-${si}`, x1: 0, y1: 0, x2: 0, y2: 1 });
+    g.appendChild(svgEl('stop', { offset: 0, 'stop-color': s.color, 'stop-opacity': .3 }));
+    g.appendChild(svgEl('stop', { offset: 1, 'stop-color': s.color, 'stop-opacity': 0 }));
+    defs.appendChild(g);
+  });
+  svg.appendChild(defs);
+
+  series.forEach((s, si) => {
+    const pts = s.data.map((v, i) => [xFn(i), yFn(v)]);
+    const area = svgEl('path', {
+      d: pathFromPoints(pts) + ` L ${pts[pts.length-1][0]} ${MT+innerH} L ${pts[0][0]} ${MT+innerH} Z`,
+      fill: `url(#${containerId}-g-${si})`, opacity: .5
+    });
+    svg.appendChild(area);
+    const line = svgEl('path', {
+      d: pathFromPoints(pts), fill: 'none', stroke: s.color, 'stroke-width': 2,
+      'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+    });
+    line.style.strokeDasharray = '3000';
+    line.style.strokeDashoffset = '3000';
+    line.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)';
+    svg.appendChild(line);
+    setTimeout(() => line.style.strokeDashoffset = '0', 60 + si * 100);
+    const last = pts[pts.length - 1];
+    const dot = svgEl('circle', { cx: last[0], cy: last[1], r: 4, fill: s.color });
+    svg.appendChild(dot);
+  });
+
+  wrap.appendChild(svg);
+}
+
+// ── state ────────────────────────────────────────────────────────────────────
+const lossHistory = [];  // [{total, policy, value}] per epoch
+const eloHistory  = [];  // [{elo}] per ladder run
+let currentSettings = {};
+
+let lastElo = null, lastLoss = null, lastValueMse = null;
+
+function applyState(s) {
+  // Header
+  setText('meta-device', (s.cuda_available ? 'CUDA' : 'CPU'));
+  const mc = s.max_cycles || 0;
+  setText('meta-cycle', mc ? `${s.cycle||0}/${mc}` : `${s.cycle||0}/∞`);
+  setText('meta-samples', (s.replay_samples||0).toLocaleString());
+  setText('meta-status', s.status_msg || 'Ready');
+
+  // Stage pill
+  const sp = el('stage-pill');
+  sp.textContent = s.stage || 'idle';
+  sp.className = 'pill ' + (s.stage === 'error' ? 'warn' : s.running ? 'live' : '');
+
+  // Elapsed
+  setText('elapsed-pill', elapsed(s.elapsed_sec));
+
+  // Primary metrics
+  if (s.elo_estimate) {
+    setText('m-elo', Math.round(s.elo_estimate));
+    setText('m-elo-ci', `[${Math.round(s.elo_low||0)}, ${Math.round(s.elo_high||0)}]`);
+    if (lastElo !== s.elo_estimate) {
+      eloHistory.push(s.elo_estimate);
+      lastElo = s.elo_estimate;
+      drawEloChart();
+    }
+    setText('elo-label', `${Math.round(s.elo_estimate)} Elo`);
+  }
+  if (s.policy_loss != null && s.policy_loss > 0) {
+    setText('m-policy', s.policy_loss.toFixed(4));
+  } else if (s.train_loss > 0) {
+    setText('m-policy', s.train_loss.toFixed(4));
+  }
+  if (s.value_mse > 0) setText('m-value', s.value_mse.toFixed(5));
+  if (s.stage_rate > 0) setText('m-rate', s.stage_rate.toFixed(1));
+
+  // Top-k
+  if (s.policy_top1) setText('m-top1', `top-1 ${(s.policy_top1*100).toFixed(1)}%`);
+  if (s.policy_top5) setText('m-top5', `top-5 ${(s.policy_top5*100).toFixed(1)}%`);
+
+  // Secondary
+  setText('s-loss', s.train_loss > 0 ? s.train_loss.toFixed(4) : '—');
+  setText('s-draws', s.draw_rate > 0 ? (s.draw_rate*100).toFixed(1)+'%' : '—');
+  setText('s-ply', s.avg_ply > 0 ? s.avg_ply.toFixed(1) : '—');
+  setText('s-replay', s.replay_samples > 0 ? s.replay_samples.toLocaleString() : '—');
+  setText('s-latency', s.latency_ms > 0 ? s.latency_ms.toFixed(2)+' ms' : '—');
+  setText('s-age', age(s.last_update_at));
+
+  // Run name heading
+  const name = s.run_name || currentSettings.run_name || '—';
+  setText('run-name-head', name);
+  setText('crumb', `Runs / ${name}`);
+
+  // Accumulate loss for chart
+  if (s.train_loss > 0 && s.train_loss !== lastLoss) {
+    lastLoss = s.train_loss;
+    lossHistory.push({
+      total: s.train_loss,
+      policy: s.policy_loss || s.train_loss,
+      value: s.value_loss || s.value_mse || 0
+    });
+    drawLossChart();
+    setText('loss-epoch-label', `epoch ${lossHistory.length}`);
+  }
+
+  // Progress bar
+  el('prog-bar').style.width = (Math.min(1, s.progress||0)*100) + '%';
+
+  // Stage pills
+  const stageOrder = ['generate','filter','train','evaluate','ladder','checkpoint'];
+  const activeIdx = stageOrder.indexOf(s.stage);
+  document.querySelectorAll('.stage-pill').forEach((pill, idx) => {
+    pill.classList.remove('active','done','error');
+    if (s.stage === 'error') { if (idx === activeIdx) pill.classList.add('error'); }
+    else if (s.stage === 'complete') { pill.classList.add('done'); }
+    else { if (idx === activeIdx) pill.classList.add('active'); else if (activeIdx > idx) pill.classList.add('done'); }
+  });
+
+  // Stage detail
+  const total = s.stage_total || 0, cur = s.stage_current || 0;
+  setText('stage-detail', s.stage_detail || s.status_msg || 'Ready');
+  setText('stage-count', total ? `${cur.toLocaleString()} / ${total.toLocaleString()}` : '');
+
+  // Log
+  renderLog(s.log || []);
+
+  // Artifacts
+  renderArtifacts(s.artifacts || {});
+
+  // Controls
+  el('btn-start').disabled = !!s.running;
+  el('btn-stop').disabled = !s.running;
+  const timing = [
+    s.generation_seconds ? `gen ${s.generation_seconds.toFixed(1)}s` : '',
+    s.replay_load_seconds ? `load ${s.replay_load_seconds.toFixed(2)}s` : '',
+    s.replay_save_seconds ? `save ${s.replay_save_seconds.toFixed(2)}s` : '',
+    s.evaluation_seconds ? `eval ${s.evaluation_seconds.toFixed(1)}s` : ''
+  ].filter(Boolean).join(' · ');
+  el('ctrl-status').textContent = s.running
+    ? `Running — ${s.stage}${timing ? ' · ' + timing : ''}`
+    : (s.error ? `Error: ${s.error}` : `Pipeline idle${timing ? ' · ' + timing : ''}`);
+}
+
+function drawLossChart() {
+  lineChart('chart-loss', [
+    { color: '#5BE3C2', data: lossHistory.map(p => p.total) },
+    { color: '#4F86FF', data: lossHistory.map(p => p.policy) },
+    { color: '#FFB347', data: lossHistory.map(p => p.value) },
+  ], { yFmt: v => v.toFixed(3) });
+}
+
+function drawEloChart() {
+  lineChart('chart-elo', [
+    { color: '#4F86FF', data: eloHistory },
+  ], { yFmt: v => Math.round(v) });
+}
+
+function renderLog(log) {
+  const box = el('run-log');
+  if (!log.length) {
+    box.innerHTML = '<div class="log-line"><span class="log-time">--:--:--</span><span>Run log streams here.</span></div>';
+    return;
+  }
+  box.innerHTML = log.slice(-80).map(row =>
+    `<div class="log-line"><span class="log-time">${row.t||''}</span><span>${row.message||''}</span></div>`
+  ).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function renderArtifacts(artifacts) {
+  const entries = Object.entries(artifacts).filter(([k]) => !['run_dir','cycles_dir'].includes(k));
+  el('artifacts').innerHTML = entries.length
+    ? entries.map(([k, v]) => `<div class="artifact"><div class="ak">${k.replaceAll('_',' ')}</div><code title="${v}">${v.replace(/.*[\\\/]/, '…/')}</code></div>`).join('')
+    : '<div style="color:var(--dim); font-size:.84rem; font-style:italic; grid-column:1/-1;">Artifacts appear after a run starts.</div>';
+}
+
+// ── settings ─────────────────────────────────────────────────────────────────
+const KEYS = ['run_name','preset','pipeline_mode','max_cycles','device','amp','cycle_games','warmup_cycles',
+  'selfplay_mode','max_ply','seed','mcts_simulations','stockfish_nodes','interactive_simulations','random_opening_moves',
+  'draw_rate_warning','decisive_sample_weight','replay_buffer_size',
+  'train_epochs','batch_size','learning_rate','num_blocks','channels','dropout_p','data_workers',
+  'engine_path','stockfish_path','run_ladder','ladder_games','ladder_movetime_ms'];
+const NUMERIC = new Set(['max_cycles','cycle_games','warmup_cycles','max_ply','seed','mcts_simulations','stockfish_nodes',
+  'interactive_simulations','random_opening_moves','draw_rate_warning','decisive_sample_weight',
+  'replay_buffer_size','train_epochs','batch_size','learning_rate','num_blocks','channels','data_workers',
+  'dropout_p','ladder_games','ladder_movetime_ms']);
+const BOOLS = new Set(['amp','run_ladder']);
+
+function fillSettings(s) {
+  currentSettings = s || {};
+  KEYS.forEach(k => {
+    const e = el(k);
+    if (e && s[k] != null) e.value = String(s[k]);
+  });
+}
+
+function readSettings() {
+  const p = {};
+  KEYS.forEach(k => {
+    const e = el(k);
+    if (!e) return;
+    let v = e.value;
+    if (BOOLS.has(k)) v = (v === 'true');
+    if (NUMERIC.has(k)) v = Number(v);
+    p[k] = v;
+  });
+  return p;
+}
+
+function saveSettings() {
+  return fetch('/training/settings', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(readSettings())
+  }).then(r => r.json());
+}
+
+function loadSettings() {
+  fetch('/training/settings').then(r => r.json()).then(fillSettings);
+}
+
+// ── wiring ───────────────────────────────────────────────────────────────────
+el('btn-start').addEventListener('click', () => {
+  saveSettings().then(() => fetch('/training/start', { method: 'POST' }));
+});
+el('btn-stop').addEventListener('click', () => fetch('/training/stop', { method: 'POST' }));
+el('btn-reset').addEventListener('click', () => fetch('/training/reset', { method: 'POST' }).then(() => {
+  lossHistory.length = 0; eloHistory.length = 0; lastElo = null; lastLoss = null;
+  el('chart-loss').innerHTML = '<div class="chart-empty">Loss data will appear as training runs</div>';
+  el('chart-elo').innerHTML = '<div class="chart-empty">Ladder results will appear here</div>';
+}));
+el('btn-save').addEventListener('click', () => saveSettings().then(() => loadSettings()));
+el('btn-refresh-settings').addEventListener('click', loadSettings);
+el('preset').addEventListener('change', () => {
+  fetch('/training/settings', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ preset: el('preset').value })
+  }).then(loadSettings);
+});
+
+// Boot
+fetch('/training/state').then(r => r.json()).then(applyState);
+loadSettings();
+
+// SSE stream
+function connectStream() {
+  const es = new EventSource('/training/stream');
+  es.onmessage = e => { try { applyState(JSON.parse(e.data)); } catch(_) {} };
+  es.onerror = () => { es.close(); setTimeout(connectStream, 2500); };
+}
+connectStream();
+</script>
+</body>
+</html>
